@@ -10,7 +10,8 @@ import cors from 'cors';
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { userRouter } from "../backend/src/router/user.router.js"; // ⬅ Import routes up top
+import { userRouter } from "../backend/src/router/user.router.js"; 
+import { productRouter } from "../backend/src/router/product.router.js"
 
 dotenv.config();
 const app = express();
@@ -48,6 +49,7 @@ app.get('/', (req, res) => {
 });
 
 app.use("/api/auth", userRouter);
+app.use("/api/product",productRouter)
 
 // ========================== DB and Server Start =========================== //
 

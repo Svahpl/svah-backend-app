@@ -1,9 +1,8 @@
-import { User } from "../models/user.model.js";
+import { User } from "../models/user.models.js";
 import { Product } from "../models/product.models.js";
-import { uploadCloudinery } from "../utils/cloudinary.utils.js";
-import { ProductSchema } from "../validation/auth.validation.js";
+import {uploadoncloudinary} from "../utils/cloudinary.js"
 import { v2 as cloudinary } from "cloudinary";
-import mongoose from "mongoose";
+import {ProductSchema} from "../utils/auth.validation.js"
 
 
 export const productController = async (req, res) => {
