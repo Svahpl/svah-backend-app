@@ -10,8 +10,8 @@ import cors from 'cors';
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { userRouter } from "../backend/src/router/user.router.js"; 
-import { productRouter } from "../backend/src/router/product.router.js"
+import { userRouter } from "./src/router/user.router.js"; 
+import { productRouter } from "./src/router/product.router.js"
 
 dotenv.config();
 const app = express();
@@ -20,7 +20,7 @@ const port = process.env.PORT;
 // ========================== Default Middlewares =========================== //
 
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN,
+    origin: 'http://localhost:5173',
     credentials: true,
     methods: "GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS",
     allowedHeaders: [
