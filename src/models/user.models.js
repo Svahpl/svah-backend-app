@@ -60,12 +60,6 @@ const UserSchema = new mongoose.Schema({
             pinCode: { type: String },
         },
     ],
-    otp: {
-        type: String,
-    },
-    otpExpiry: {
-        type: Date,
-    },
     isGuest: {
         type: Boolean,
         default: false,

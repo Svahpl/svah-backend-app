@@ -1,5 +1,5 @@
 import  {User}  from "../models/user.models.js"
-
+import welcomeEmail from "../services/welcome.email.js";
 export const Signup = async (req, res) => {
     console.log(req.body);
     const { FirstName, LastName, Email, Password , Token } = req.body ;
@@ -27,6 +27,7 @@ export const Signup = async (req, res) => {
             sameSite: "lax",
         }
         if (createduser) {
+            welcomeEmail(FullName, Email, "Welcome to Sri Venkateswara Agros and Herbs")
             return res.status(200).cookie("authToken",Token,option).json({ msg: "user created sucseesfully !!!!" , user})
         }
     } catch (error) {
