@@ -1,7 +1,3 @@
-// code by weborium
-
-// ========================== Imports =========================== //
-
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -12,12 +8,13 @@ import { fileURLToPath } from "url";
 
 import { userRouter } from "./src/router/user.router.js"; 
 import { productRouter } from "./src/router/product.router.js"
+import { webhookRouter } from './src/router/webhook.router.js';
 
 dotenv.config();
 const app = express();
 const port = process.env.PORT;
 
-// ========================== Default Middlewares =========================== //
+// ========================== CORS Setup =========================== //
 
 const corsOptions = {
     origin: 'http://localhost:5173',
@@ -28,6 +25,9 @@ const corsOptions = {
         "Authorization",
         "Access-Control-Allow-Credentials",
         "cache-control",
+        "svix-id",
+        "svix-timestamp", 
+        "svix-signature"
     ],
     exposedHeaders: ["Authorization"],
 };
@@ -35,8 +35,14 @@ const corsOptions = {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(express.json()); 
 app.use(cors(corsOptions));
+
+// ========================== IMPORTANT: Webhook Route =========================== //
+
+app.use('/api/webhooks', express.raw({ type: 'application/json' }), webhookRouter);
+
+// ========================== Other Middlewares =========================== //
+app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static('/tmp', { index: false }));
@@ -49,7 +55,7 @@ app.get('/', (req, res) => {
 });
 
 app.use("/api/auth", userRouter);
-app.use("/api/product",productRouter)
+app.use("/api/product", productRouter);
 
 // ========================== DB and Server Start =========================== //
 
