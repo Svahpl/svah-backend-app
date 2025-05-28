@@ -7,7 +7,7 @@ export const webhookRouter = Router();
 webhookRouter.post('/register', async (req, res) => {
     console.log('Incoming webhook request...');
 
-    const webhookSecret = 'whsec_UBBuBgDT5iQYhuanXwV5owVV+A6CG4l2';
+    const webhookSecret = process.env.WEBHOOK_SECRET;
     if (!webhookSecret) {
         console.error('Missing WEBHOOK_SECRET');
         return res.status(500).json({ msg: 'Missing webhook secret in env file' });
