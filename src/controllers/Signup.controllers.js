@@ -10,7 +10,7 @@ export const Signup = async (req, res) => {
     const ExistUser = await User.findOne({ Email })
 
     if (ExistUser) {
-        return res.status(400).json({ msg: "user already exist not need to store"})
+        return res.status(200).json({ msg: "user already exist not need to store"})
     }
 
     try {
