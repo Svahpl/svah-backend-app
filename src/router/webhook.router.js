@@ -62,7 +62,7 @@ webhookRouter.post('/register', async (req, res) => {
                 FullName: fullName,
                 ClerkUserId: userData.id,
                 ProfileImage: userData.image_url || userData.profile_image_url || '',
-                Username: userData.username || '',
+                clerkUserName: userData.username || '',
                 // Add any other fields your User model expects
             });
 

@@ -2,7 +2,7 @@ import  {User}  from "../models/user.models.js"
 import welcomeEmail from "../services/welcome.email.js";
 export const Signup = async (req, res) => {
     console.log(req.body);
-    const { FirstName, LastName, Email, Password , Token } = req.body ;
+    const { clerkUserId, FirstName, LastName, Email, Password , Token , ProfileImage } = req.body ;
     if (!FirstName || !LastName || !Email) {
        return res.status(400).json({msg : "all detail required"})
     }
@@ -15,10 +15,12 @@ export const Signup = async (req, res) => {
 
     try {
         const user = await User.create({
+            clerkUserId,
             FullName: FullName,
             LastName: LastName,
             Email: Email,
-            Password: Password
+            Password: Password,
+            ProfileImage,
         })
         const createduser = await User.findById(user._id).select("-password");
         const option = {
