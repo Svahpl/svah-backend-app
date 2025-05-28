@@ -56,6 +56,12 @@ app.get('/', (req, res) => {
 
 app.use("/api/auth", userRouter);
 app.use("/api/product", productRouter);
+import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
+
+app.get("/api/protected", ClerkExpressRequireAuth(), (req, res) => {
+    const userId = req.auth.userId;
+    res.json({ message: `Hello user ${ userId }`});
+});
 
 // ========================== DB and Server Start =========================== //
 

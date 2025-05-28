@@ -1,32 +1,32 @@
-import { verifyToken } from "@clerk/backend";
-import { User } from "../models/user.models.js"; // Make sure to add .js if needed
+// middlewares/AdminVerify.js
+import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
+import { User } from "../models/user.models.js";
 
-export const AdminVerify = async (req, res, next) => {
-    const token = req.cookies.authToken || req.header("Authorization")?.replace("Bearer ", "");
+// This combines Clerk auth + DB admin check
+export const AdminVerify = [
+    ClerkExpressRequireAuth(), // First, verify the user is logged in via Clerk
 
-    if (!token) {
-        return res.status(401).json({ message: "Access denied. No token provided." });
-    }
+    async (req, res, next) => {
+        try {
+            const userId = req.auth.userId;
+            console.log(userId)
+            if (!userId) {
+                return res.status(401).json({ message: "Unauthorized: No Clerk userId" });
+            }
 
-    try {
+            // Look up the user in your DB by Clerk userId
+            const user = await User.findOne({ ClerkUserId: userId });
 
-        const { payload } = await verifyToken(token, {
-            secretKey: process.env.CLERK_SECRET_KEY,
-        });
+            if (!user || !user.isAdmin) {
+                return res.status(403).json({ message: "Access denied: Admins only" });
+            }
 
-        req.user = payload;
-
-        const user = await User.findOne({ Email: req.user.email });
-
-        if (!user || !user.isAdmin) {
-            return res.status(403).json({ message: "Access denied: Admins only" });
+            // Attach user data for future use
+            req.user = user;
+            next();
+        } catch (error) {
+            console.error("AdminVerify middleware error:", error);
+            res.status(500).json({ message: "Admin verification failed", error });
         }
-
-        next(); // ✅ Let them proceed
-    } catch (error) {
-        console.error("Admin verification error:", error);
-        return res.status(400).json({ message: "Something went wrong in admin verification", error });
     }
-};
-
-export default AdminVerify;
+];

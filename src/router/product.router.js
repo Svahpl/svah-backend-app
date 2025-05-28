@@ -1,7 +1,6 @@
 import { Router } from "express";
 import {upload }from "../middlewares/multer-middlewares.js"
-import {authVerification} from "../middlewares/auth.middlewares.js"
-import AdminVerify from "../middlewares/Admin.middlewares.js";
+import {AdminVerify} from "../middlewares/Admin.middlewares.js";
 
 import {
     productController,
