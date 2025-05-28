@@ -4,7 +4,7 @@ const UserSchema = new mongoose.Schema(
     {
         clerkUserId: {
             type: String,
-            required: true,
+            required: false,
         },
         clerkUserName: {
             type: String,
