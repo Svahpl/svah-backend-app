@@ -16,6 +16,7 @@
     },
     "dependencies": {
         "@clerk/backend": "^1.33.0",
+        "@clerk/clerk-sdk-node": "^4.13.23",
         "cloudinary": "^2.6.1",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
@@ -25,6 +26,7 @@
         "multer": "^2.0.0",
         "nodemailer": "^7.0.3",
         "nodemon": "^3.1.10",
+        "svix": "^1.66.0",
         "yarn": "^1.22.22",
         "zod": "^3.25.28"
     },
