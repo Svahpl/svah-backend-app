@@ -1,6 +1,9 @@
 import { verifyToken } from "@clerk/backend";
 import { User } from "../models/user.models.js"; // Make sure to add .js if needed
-
+import dotenv from "dotenv";
+dotenv.config({
+    path : ".env"
+})
 export const AdminVerify = async (req, res, next) => {
     const token = req.cookies.authToken || req.header("Authorization")?.replace("Bearer ", "");
 
@@ -9,14 +12,23 @@ export const AdminVerify = async (req, res, next) => {
     }
 
     try {
-
+        console.log(process.env.CLERK_SECRET_KEY)
         const { payload } = await verifyToken(token, {
             secretKey: process.env.CLERK_SECRET_KEY,
         });
 
         req.user = payload;
+        console.log(payload);
+        const email =
+            payload.email ||
+            payload.email_address ||
+            payload.primary_email_address ||
+            (payload.email_addresses && payload.email_addresses[0]?.email_address);
 
-        const user = await User.findOne({ Email: req.user.email });
+        if (!email) {
+            return res.status(400).json({ message: "Could not determine email from token." });
+        }
+        const user = await User.findOne({ Email: email });
 
         if (!user || !user.isAdmin) {
             return res.status(403).json({ message: "Access denied: Admins only" });
