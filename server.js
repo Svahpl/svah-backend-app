@@ -17,7 +17,7 @@ const port = process.env.PORT;
 // ========================== CORS Setup =========================== //
 
 const corsOptions = {
-    origin: 'https://svahpl.com',
+    origin: "https://www.svahpl.com",
     credentials: true,
     methods: "GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS",
     allowedHeaders: [
