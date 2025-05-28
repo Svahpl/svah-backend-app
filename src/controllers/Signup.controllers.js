@@ -5,10 +5,10 @@ import welcomeEmail from "../services/welcome.email.js";
 export const Signup = async (req, res) => {
     console.log(req.body);
     const { clerkUserId, FirstName, lastName, Email, Password , Token , ProfileImage } = req.body ;
-    if (!FirstName || !LastName || !Email) {
+    if (!FirstName || !lastName || !Email) {
        return res.status(400).json({msg : "all detail required"})
     }
-    const FullName = `${FirstName} ${LastName}`;
+    const FullName = `${FirstName} ${lastName}`;
     const ExistUser = await User.findOne({ Email })
 
     if (ExistUser) {
