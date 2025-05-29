@@ -1,12 +1,14 @@
 import  {User}  from "../models/user.models.js"
 import welcomeEmail from "../services/welcome.email.js";
+
+
 export const Signup = async (req, res) => {
     console.log(req.body);
-    const { FirstName, LastName, Email, Password , Token } = req.body ;
-    if (!FirstName || !LastName || !Email) {
+    const { clerkUserId, FirstName, lastName, Email, Password , Token , ProfileImage } = req.body ;
+    if (!FirstName || !lastName || !Email) {
        return res.status(400).json({msg : "all detail required"})
     }
-    const FullName = `${FirstName} ${LastName}`;
+    const FullName = `${FirstName} ${lastName}`;
     const ExistUser = await User.findOne({ Email })
 
     if (ExistUser) {
@@ -15,10 +17,12 @@ export const Signup = async (req, res) => {
 
     try {
         const user = await User.create({
+            clerkUserId,
             FullName: FullName,
-            LastName: LastName,
+            LastName: lastName,
             Email: Email,
-            Password: Password
+            Password: Password,
+            ProfileImage,
         })
         const createduser = await User.findById(user._id).select("-password");
         const option = {
