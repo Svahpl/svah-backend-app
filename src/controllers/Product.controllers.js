@@ -29,7 +29,7 @@ export const productController = async (req, res) => {
         // Upload images sequentially
         let imageUrls = [];
         for (const file of req.files) {
-            const uploadedImage = await uploadCloudinery(file.path);
+            const uploadedImage = await uploadoncloudinary(file.path);
             if (uploadedImage.url) {
                 imageUrls.push(uploadedImage.url);
             }
@@ -47,7 +47,6 @@ export const productController = async (req, res) => {
             price,
             quantity,
             category,
-            size,
             images: imageUrls,
         });
 
@@ -101,7 +100,7 @@ export const updateProduct = async (req, res) => {
             // Upload new images to Cloudinary
             imageUrls = [];
             for (const file of req.files) {
-                const uploadedImage = await uploadCloudinery(file.path);
+                const uploadedImage = await uploadoncloudinary(file.path);
                 if (uploadedImage.url) {
                     imageUrls.push(uploadedImage.url);
                 }
@@ -141,7 +140,7 @@ export const deleteProduct = async (req, res) => {
     try {
         const product = await Product.findByIdAndDelete(id);
         if (product.images && product.images.public_id) {
-            await cloudinary.uploader.destroy(product.images.public_id);
+            await cloudinary.uploader.destroy(product.images);
         }
         res.status(200).json({ messege: "product deleted", product });
     } catch (error) {
