@@ -9,6 +9,7 @@ import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
 import { userRouter } from "./src/router/user.router.js"; 
 import { productRouter } from "./src/router/product.router.js"
 import { webhookRouter } from './src/router/webhook.router.js';
+import paypalRouter from "./src/router/paypal.router.js"
 
 dotenv.config();
 const app = express();
@@ -76,6 +77,7 @@ app.get('/', (req, res) => {
 
 app.use("/api/auth", userRouter);
 app.use("/api/product", productRouter);
+app.use('/api/paypal',paypalRouter);
 
 app.get("/api/protected", ClerkExpressRequireAuth(), (req, res) => {
     const userId = req.auth.userId;

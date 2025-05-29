@@ -17,11 +17,13 @@
     "dependencies": {
         "@clerk/backend": "^1.33.0",
         "@clerk/clerk-sdk-node": "^4.13.23",
+        "axios": "^1.9.0",
         "cloudinary": "^2.6.1",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
         "dotenv": "^16.5.0",
         "express": "^5.1.0",
+        "got": "^14.4.7",
         "mongoose": "^8.15.0",
         "multer": "^2.0.0",
         "nodemailer": "^7.0.3",
