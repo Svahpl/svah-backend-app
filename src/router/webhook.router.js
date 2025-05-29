@@ -45,7 +45,9 @@ webhookRouter.post('/register', async (req, res) => {
     try {
         if (evt.type === 'user.created') {
             const userData = evt.data;
-            console.log('Creating new user:', userData.id);
+            const clerkUserId = userData.id; // Clerk user ID
+
+            console.log('Creating new user with Clerk ID:', clerkUserId);
 
             // Transform Clerk data to match your User model
             const email = userData.email_addresses?.[0]?.email_address;
@@ -57,19 +59,27 @@ webhookRouter.post('/register', async (req, res) => {
                 throw new Error('No email address found in user data');
             }
 
+            const userExists = await User.findOne({ Email: email });
+
+            if (userExists) {
+                return res.status(200).json({ msg: 'user already exists' });
+            }
+
             const newUser = await User.create({
                 Email: email,
                 FullName: fullName,
-                ClerkUserId: userData.id,
+                clerkUserId: clerkUserId, // Using consistent field name
                 ProfileImage: userData.image_url || userData.profile_image_url || '',
-                Username: userData.username || '',
+                clerkUserName: userData.username || '',
                 // Add any other fields your User model expects
             });
 
-            console.log('User saved to DB:', newUser._id);
+            console.log('User saved to DB with ID:', newUser._id, 'Clerk ID:', clerkUserId);
         } else if (evt.type === 'user.updated') {
             const userData = evt.data;
-            console.log('Updating user:', userData.id);
+            const clerkUserId = userData.id; // Clerk user ID
+
+            console.log('Updating user with Clerk ID:', clerkUserId);
 
             const email = userData.email_addresses?.[0]?.email_address;
             const fullName =
@@ -79,7 +89,7 @@ webhookRouter.post('/register', async (req, res) => {
             const updateData = {
                 FullName: fullName,
                 ProfileImage: userData.image_url || userData.profile_image_url || '',
-                Username: userData.username || '',
+                clerkUserName: userData.username || '',
             };
 
             // Only update email if it exists
@@ -87,15 +97,21 @@ webhookRouter.post('/register', async (req, res) => {
                 updateData.Email = email;
             }
 
-            await User.findOneAndUpdate({ ClerkUserId: userData.id }, updateData, { new: true });
+            const updatedUser = await User.findOneAndUpdate(
+                { clerkUserId: clerkUserId }, // Using consistent field name
+                updateData,
+                { new: true },
+            );
 
-            console.log('User updated in DB');
+            console.log('User updated in DB:', updatedUser?._id);
         } else if (evt.type === 'user.deleted') {
             const userData = evt.data;
-            console.log('Deleting user:', userData.id);
+            const clerkUserId = userData.id; // Clerk user ID
 
-            await User.findOneAndDelete({ ClerkUserId: userData.id });
-            console.log('User deleted from DB');
+            console.log('Deleting user with Clerk ID:', clerkUserId);
+
+            const deletedUser = await User.findOneAndDelete({ clerkUserId: clerkUserId });
+            console.log('User deleted from DB:', deletedUser?._id);
         }
     } catch (dbError) {
         console.error('Database operation failed:', dbError.message);

@@ -1,32 +1,45 @@
-// middlewares/AdminVerify.js
-import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
+import { verifyToken } from "@clerk/backend";
 import { User } from "../models/user.models.js";
+import dotenv from "dotenv";
+dotenv.config();
 
-// This combines Clerk auth + DB admin check
-export const AdminVerify = [
-    ClerkExpressRequireAuth(), // First, verify the user is logged in via Clerk
-
-    async (req, res, next) => {
-        try {
-            const userId = req.auth.userId;
-            console.log(userId)
-            if (!userId) {
-                return res.status(401).json({ message: "Unauthorized: No Clerk userId" });
-            }
-
-            // Look up the user in your DB by Clerk userId
-            const user = await User.findOne({ ClerkUserId: userId });
-
-            if (!user || !user.isAdmin) {
-                return res.status(403).json({ message: "Access denied: Admins only" });
-            }
-
-            // Attach user data for future use
-            req.user = user;
-            next();
-        } catch (error) {
-            console.error("AdminVerify middleware error:", error);
-            res.status(500).json({ message: "Admin verification failed", error });
-        }
+export const AdminVerify = async (req, res, next) => {
+    const token = req.cookies.authToken || req.header("Authorization")?.replace("Bearer ", "");
+    console.log(token)
+    if (!token) {
+        return res.status(401).json({ message: "Access denied. No token provided." });
     }
-];
+
+    try {
+        console.log("🔐 Verifying token...");
+        const verified = await verifyToken(token, {
+            secretKey: process.env.CLERK_SECRET_KEY,
+        });
+
+        console.log(verified)
+
+        const payload = verified;
+        console.log("✅ Token payload keys:", Object.keys(payload));
+        console.log("📦 Full Payload:", JSON.stringify(payload, null, 2));
+
+        const userId =
+            payload.sub || payload.id || payload.clerk_user_id || payload.userId;
+
+        console.log("user :",userId)
+
+        const user = await User.findOne({ clerkUserId: userId });
+        console.log("user new one :" , user)
+        if (!user || !user.isAdmin) {
+            return res.status(403).json({ message: "Access denied: Admins only" });
+        }
+
+        req.user = user;
+        next();
+    } catch (error) {
+        console.error("🛑 AdminVerify error:", error?.stack || error);
+        return res.status(400).json({
+            message: "Something went wrong in admin verification",
+            error: error?.message || error,
+        });
+    }
+};
