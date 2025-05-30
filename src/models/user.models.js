@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-
+import jwt from "jsonwebtoken";
 const UserSchema = new mongoose.Schema(
     {
         clerkUserId: {
@@ -79,5 +79,8 @@ const UserSchema = new mongoose.Schema(
     },
     { timestamps: true },
 );
+
+
+
 
 export const User = new mongoose.model('User', UserSchema);
