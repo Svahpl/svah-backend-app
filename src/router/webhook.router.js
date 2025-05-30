@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Webhook } from 'svix';
 import { User } from '../models/user.models.js';
-
+import welcomeEmail from '../services/welcome.email.js';
 export const webhookRouter = Router();
 
 webhookRouter.post('/register', async (req, res) => {
@@ -73,7 +73,17 @@ webhookRouter.post('/register', async (req, res) => {
                 clerkUserName: userData.username || '',
                 // Add any other fields your User model expects
             });
-
+           
+           try {
+             const user = await User.findOne({ Email: email });
+ 
+             if(user){
+                 await welcomeEmail(fullName, email, "Welcome to Sri Venkateswara Agros and Herbs");
+                 console.log(`sent to ${email}`)
+             }
+           } catch (error) {
+              console.log(error)
+           }
             console.log('User saved to DB with ID:', newUser._id, 'Clerk ID:', clerkUserId);
         } else if (evt.type === 'user.updated') {
             const userData = evt.data;

@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-
 const UserSchema = new mongoose.Schema(
     {
         clerkUserId: {
@@ -79,5 +78,8 @@ const UserSchema = new mongoose.Schema(
     },
     { timestamps: true },
 );
+
+
+
 
 export const User = new mongoose.model('User', UserSchema);

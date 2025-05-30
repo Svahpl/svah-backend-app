@@ -20,4 +20,4 @@ productRouter.route("/add").post(AdminVerify,
 
 productRouter.delete("/delete-product/:id", AdminVerify, deleteProduct);
 productRouter.get("/get-all",getAllProducts);
-productRouter.put("/update-product:id",AdminVerify,upload.array("images",5),updateProduct);
+productRouter.put("/update-product/:id",AdminVerify,upload.array("images",5),updateProduct);

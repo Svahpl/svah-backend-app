@@ -1,3 +1,4 @@
+
 import { verifyToken } from "@clerk/backend";
 import { User } from "../models/user.models.js";
 import dotenv from "dotenv";
@@ -25,10 +26,10 @@ export const AdminVerify = async (req, res, next) => {
         const userId =
             payload.sub || payload.id || payload.clerk_user_id || payload.userId;
 
-        console.log("user :",userId)
+        console.log("user :", userId)
 
         const user = await User.findOne({ clerkUserId: userId });
-        console.log("user new one :" , user)
+        console.log("user new one :", user)
         if (!user || !user.isAdmin) {
             return res.status(403).json({ message: "Access denied: Admins only" });
         }

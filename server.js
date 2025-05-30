@@ -11,6 +11,9 @@ import { productRouter } from './src/router/product.router.js';
 import { webhookRouter } from './src/router/webhook.router.js';
 import paypalRouter from './src/router/paypal.router.js';
 import { User } from './src/models/user.models.js';
+// import Razorpay from 'razorpay';
+// import { razorPayRouter } from './src/router/razorpay.router.js';
+
 
 dotenv.config();
 const app = express();
@@ -68,7 +71,15 @@ app.use(cookieParser());
 app.use(express.static('/tmp', { index: false }));
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
-// ========================== API Routes =========================== //
+// ========================== Razor Pay Setup =========================== //
+
+// export const instance = new Razorpay({
+//     key_id: process.env.RAZORPAY_KEY_ID,
+//     key_secret: process.env.RAZORPAY_KEY_SECRET,
+// });
+
+
+
 
 app.get('/', (req, res) => {
     return res.send(`This is Svah's Backend Server!`);
@@ -77,6 +88,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', userRouter);
 app.use('/api/product', productRouter);
 app.use('/api/paypal', paypalRouter);
+// app.use('/api/razorpay', razorPayRouter)
 
 app.get('/api/protected', ClerkExpressRequireAuth(), async (req, res) => {
     const userId = req.auth.userId;
