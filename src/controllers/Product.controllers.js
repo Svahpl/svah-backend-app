@@ -12,7 +12,7 @@ export const productController = async (req, res) => {
             return res.status(400).json({ message: error.errors[0].message });
         }
 
-        const { title, description, price, category, quantity} = data;
+        const { title, description, price, category, quantity, subcategory } = data;
 
         if (!title || !description || !price || !category || !quantity) {
             return res
@@ -47,6 +47,7 @@ export const productController = async (req, res) => {
             price,
             quantity,
             category,
+            subcategory,
             images: imageUrls,
         });
 
@@ -113,6 +114,7 @@ export const updateProduct = async (req, res) => {
         if (data.description) updateObject.description = data.description;
         if (data.price) updateObject.price = data.price;
         if (data.category) updateObject.category = data.category;
+        if (data.subcategory) updateObject.subcategory = data.subcategory
         if (data.hasOwnProperty("quantity")) updateObject.quantity = data.quantity;
         if (data.size) updateObject.size = data.size;
         if (imageUrls.length > 0) updateObject.images = imageUrls; // Only update images if new ones exist
