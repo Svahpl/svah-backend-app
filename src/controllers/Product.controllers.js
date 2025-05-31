@@ -7,14 +7,16 @@ import {ProductSchema} from "../utils/auth.validation.js"
 
 export const productController = async (req, res) => {
     try {
+        console.log(req.body)
         const { data, error } = ProductSchema.safeParse(req.body);
+        console.log(data)
         if (error) {
             return res.status(400).json({ message: error.errors[0].message });
         }
 
-        const { title, description, price, category, quantity, subcategory } = data;
+        const { title, description, price, category, quantity, subcategory, KeyIngredients} = data;
 
-        if (!title || !description || !price || !category || !quantity) {
+        if (!title || !description || !price || !category || !quantity ) {
             return res
                 .status(400)
                 .json({ error: "Please provide all required fields." });
@@ -48,6 +50,7 @@ export const productController = async (req, res) => {
             quantity,
             category,
             subcategory,
+            KeyIngredients,
             images: imageUrls,
         });
 
@@ -115,6 +118,7 @@ export const updateProduct = async (req, res) => {
         if (data.price) updateObject.price = data.price;
         if (data.category) updateObject.category = data.category;
         if (data.subcategory) updateObject.subcategory = data.subcategory
+        if (data.KeyIngredients) updateObject.KeyIngredients = data.KeyIngredients
         if (data.hasOwnProperty("quantity")) updateObject.quantity = data.quantity;
         if (data.size) updateObject.size = data.size;
         if (imageUrls.length > 0) updateObject.images = imageUrls; // Only update images if new ones exist
