@@ -26,9 +26,14 @@ const ProductSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    subcategory : {
-        type : String,
-        required : true,
+    subcategory: {
+        type: String,
+        required: true,
+    },
+    KeyIngredients: {
+        type: String,
+        required: true,
+        enum: ["Premium Audio", "Active Noise Cancellation"]
     },
     ratings: [
         {
@@ -58,4 +63,4 @@ const ProductSchema = new mongoose.Schema({
 }, { timestamps: true })
 
 
-export const Product = new mongoose.model("Product", ProductSchema);
+export const Product = mongoose.model("Product", ProductSchema);

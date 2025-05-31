@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
-        rzpId: { type: String, required: false },
+      //  rzpId: { type: String, required: false },
         items: [
             {
                 product: {
@@ -24,6 +24,11 @@ const orderSchema = new mongoose.Schema(
                     type: Number,
                     required: true,
                 },
+                weight: {
+                    type: Number,
+                    required: true,
+                    enum: [1, 5, 10, 25, 50, 100]
+                }
             },
         ],
         phoneNumber: {
@@ -37,6 +42,11 @@ const orderSchema = new mongoose.Schema(
         shippingAddress: {
             type: String,
             required: true,
+        },
+        shipThrough : {
+            type : String,
+            enum : ["ship" , "airline"],
+            
         },
         paymentStatus: {
             type: String,
