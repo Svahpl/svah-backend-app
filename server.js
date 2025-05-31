@@ -11,7 +11,8 @@ import { productRouter } from './src/router/product.router.js';
 import { webhookRouter } from './src/router/webhook.router.js';
 import paypalRouter from './src/router/paypal.router.js';
 import { User } from './src/models/user.models.js';
-import {OrderRouter} from "../backend/src/router/order.router.js"
+import {OrderRouter} from "./src/router/order.router.js"
+
 // import Razorpay from 'razorpay';
 // import { razorPayRouter } from './src/router/razorpay.router.js';
 

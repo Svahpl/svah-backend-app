@@ -25,6 +25,11 @@ const getAccessToken = async (req, res) => {
 };
 
 const createOrder = async (req, res) => {
+    const price = req.body.price;
+    console.log(`---debug price: ${price}`);
+    if (!price) {
+        return res.status(500).json({ msg: 'Price Not Available' });
+    }
     try {
         const accessToken = await getAccessToken();
 
@@ -70,17 +75,17 @@ const createOrder = async (req, res) => {
                                 quantity: '1',
                                 unit_amount: {
                                     currency_code: 'USD',
-                                    value: '50.00',
+                                    value: price,
                                 },
                             },
                         ],
                         amount: {
                             currency_code: 'USD',
-                            value: '50.00',
+                            value: price,
                             breakdown: {
                                 item_total: {
                                     currency_code: 'USD',
-                                    value: '50.00',
+                                    value: price,
                                 },
                             },
                         },
