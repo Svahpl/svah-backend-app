@@ -12,6 +12,7 @@ import { webhookRouter } from './src/router/webhook.router.js';
 import paypalRouter from './src/router/paypal.router.js';
 import { User } from './src/models/user.models.js';
 import {OrderRouter} from "./src/router/order.router.js"
+import { CartRouter } from './src/router/cart.router.js';
 
 // import Razorpay from 'razorpay';
 // import { razorPayRouter } from './src/router/razorpay.router.js';
@@ -91,6 +92,7 @@ app.use('/api/auth', userRouter);
 app.use('/api/product', productRouter);
 app.use('/api/paypal', paypalRouter);
 app.use('/api/order' , OrderRouter)
+app.use("/api/cart" , CartRouter)
 // app.use('/api/razorpay', razorPayRouter)
 
 app.get('/api/protected', ClerkExpressRequireAuth(), async (req, res) => {
