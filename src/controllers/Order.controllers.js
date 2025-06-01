@@ -1,4 +1,4 @@
-import { User } from "../models/user.models.js";
+
 import { Product } from "../models/product.models.js";
 import { Order } from "../models/order.models.js";
 
@@ -30,7 +30,7 @@ export const createOrder = async (req, res) => {
                 success: false,
                 message: "Missing required fields: userId or items",
             });
-          }
+        }
 
 
         // Determine shipping rate
@@ -112,7 +112,21 @@ export const createOrder = async (req, res) => {
 };
 
 
-const generateFeatureProducts = async (req, res) => {
+export const getAddress = async(req,res) => {
+    const {orderId} = req.params;
+    try {
+        const order = await Order.findById(orderId);
+        const address = order.shippingAddress;
+
+        res.status(200).json({msg : "address fetched" , address})
+    } catch (error) {
+        console.log(error)
+        res.status(403).json({msg : "somthing went wrong :" , error})
+    }
+}
+
+
+export const generateFeatureProducts = async (req, res) => {
     try {
         const products = await Product.find();
         const getRandomProducts = (arr) =>
