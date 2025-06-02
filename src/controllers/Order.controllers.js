@@ -111,7 +111,6 @@ export const createOrder = async (req, res) => {
     }
 };
 
-
 export const getAddress = async(req,res) => {
     const {orderId} = req.params;
     try {
@@ -124,8 +123,6 @@ export const getAddress = async(req,res) => {
         res.status(403).json({msg : "somthing went wrong :" , error})
     }
 }
-
-
 export const generateFeatureProducts = async (req, res) => {
     try {
         const products = await Product.find();
