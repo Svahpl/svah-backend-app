@@ -145,6 +145,43 @@ export const deleteProduct = async (req, res) => {
     }
 };
 
+
+export const addRating = async (req, res) => {
+    const { productId }= req.params;
+    const { newRating, userId } = req.body;
+
+    try {
+        const product = await Product.findById(productId);
+        if (!product) return res.status(404).json({ message: "Product not found" });
+
+        // Check if user already rated
+        const alreadyRated = product.ratings.find((r) => r.user.toString() === userId.toString());
+
+        if (alreadyRated) {
+            return res.status(409).json({ message: "You have already rated this product" });
+        }
+
+        // Add new rating
+        product.ratings.push({ user: userId, rating: newRating });
+        product.ratingCount = product.ratings.length;
+
+        // Recalculate average rating
+        const total = product.ratings.reduce((acc, item) => acc + item.rating, 0);
+        product.rating = total / product.ratingCount;
+
+        await product.save();
+
+        res.status(200).json({
+            message: "Rating added successfully",
+            avgRating: product.rating.toFixed(1),
+            totalRatings: product.numReviews,
+        });
+    } catch (err) {
+        console.log(`Error adding rating : ${err}`);
+        res.status(500).json({ message: "Server error", error: err });
+    }
+  };
+
 export const getProductById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -163,3 +200,4 @@ export const getProductById = async (req, res) => {
         });
     }
 };
+
