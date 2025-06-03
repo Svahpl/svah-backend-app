@@ -40,7 +40,7 @@ const getPaymentStatus = async orderId => {
                 Authorization: `Bearer ${accessToken}`,
             },
         });
-        console.log('----- PAYMENT STATUS RESPONSE ----', res.data);
+        console.log('----- PAYMENT STATUS RESPONSE ----', res.data.status);
         return res.data.status;
     } catch (error) {
         console.log(`Error during fetching Payment Status: ${error}`);
