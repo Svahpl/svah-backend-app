@@ -33,7 +33,6 @@ const ProductSchema = new mongoose.Schema({
     KeyIngredients: {
         type: String,
         required: true,
-        enum: ["Premium Audio", "Active Noise Cancellation"]
     },
     ratings: [
         {
