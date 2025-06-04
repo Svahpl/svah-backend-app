@@ -95,53 +95,72 @@ export const deleteCartItem = async (req, res) => {
     }
   };
 
+
 export const getUserCart = async (req, res) => {
     const { userId } = req.params;
-    try {
-        if (!userId)
-            return res
-                .status(400)
-                .json({ success: false, message: "User ID required" });
 
-        // Fetch user and select cart field
-        const user = await User.findById(userId).select("cart");
-        if (!user || user.cart.length === 0) {
-            return res.status(204).json({
-                success: true,
-                message: "No items in cart",
+    try {
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID required",
             });
         }
 
-        // Extract product IDs and map them to their quantity
-        const cartItemsMap = user.cart.reduce((acc, item) => {
-            acc[item.productId.toString()] = item.quantity; // Store quantity with productId as key
-            return acc;
-        }, {});
+        // Fetch user with cart only
+        const user = await User.findById(userId).select("cart");
+        if (!user || user.cart.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: "No items in cart",
+                items: [],
+            });
+        }
 
-        // Fetch products based on IDs
+        // Create map of productId => { quantity, cartItemId }
+        const cartItemsMap = {};
+        user.cart.forEach((item) => {
+            cartItemsMap[item.productId.toString()] = {
+                quantity: item.quantity,
+                cartItemId: item._id, // This is the _id of the cart item in user's cart
+            };
+        });
+
+        // Fetch full product info for each product in the cart
         const products = await Product.find({
             _id: { $in: Object.keys(cartItemsMap) },
         });
 
-        // Merge product details with quantity
-        const itemsWithQuantity = products.map((product) => ({
-            ...product.toObject(), // Convert Mongoose document to a plain object
-            quantity: cartItemsMap[product._id.toString()],
-        }));
+        // Attach quantity and cart item ID to each product
+        const itemsWithQuantity = products.map((product) => {
+            const productIdStr = product._id.toString();
+            const { quantity, cartItemId } = cartItemsMap[productIdStr];
 
+            return {
+                ...product.toObject(), // Spread full product details
+                quantity,
+                cartItemId, // This is the cart item _id from user's cart
+            };
+        });
+
+        // Send response
         return res.status(200).json({
             success: true,
+            message: "Cart items fetched successfully",
+            cartId: user._id, // still user's ID
             items: itemsWithQuantity,
-            message: "Cart Items fetched successfully",
         });
+
     } catch (error) {
+        console.error("Error fetching cart:", error);
         return res.status(500).json({
             success: false,
-            message: "Error fetching cart items of user",
-            error,
+            message: "Error fetching cart items",
+            error: error.message,
         });
     }
-  };
+};
+  
 
 export const updateCartItemQuantity = async (req, res) => {
     try {
