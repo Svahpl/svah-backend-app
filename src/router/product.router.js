@@ -14,7 +14,7 @@ import {
 export const productRouter = new Router();
 
 
-productRouter.route("/add").post(AdminVerify,
+productRouter.route("/add").post(
     upload.array("images", 5),
     productController
   );
