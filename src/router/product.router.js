@@ -2,6 +2,8 @@ import { Router } from "express";
 import {upload }from "../middlewares/multer-middlewares.js"
 import {AdminVerify} from "../middlewares/Admin.middlewares.js";
 import { addRating } from "../controllers/Product.controllers.js";
+import {getProductById} from "../controllers/Product.controllers.js"
+
 import {
     productController,
     getAllProducts,
@@ -17,6 +19,7 @@ productRouter.route("/add").post(
     productController
   );
 
+productRouter.get('/get-product/:id',getProductById)
 
 productRouter.delete("/delete-product/:id", deleteProduct);
 productRouter.get("/get-all",getAllProducts);
