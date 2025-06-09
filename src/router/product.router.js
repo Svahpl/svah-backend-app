@@ -18,7 +18,7 @@ productRouter.route("/add").post(
   );
 
 
-productRouter.delete("/delete-product/:id", AdminVerify, deleteProduct);
+productRouter.delete("/delete-product/:id", deleteProduct);
 productRouter.get("/get-all",getAllProducts);
-productRouter.put("/update-product/:id",AdminVerify,upload.array("images",5),updateProduct);
+productRouter.put("/update-product/:id",upload.array("images",5),updateProduct);
 productRouter.put("/rate/:productId", addRating);

@@ -1,7 +1,10 @@
 import { Router } from "express";
-import { Signup } from "../controllers/Signup.controllers.js"
+import { Signup, getAllUser, deleteUser, EmailByAdmin } from "../controllers/Signup.controllers.js"
+
 
 export const userRouter = new Router();
 
 userRouter.route("/signup").post(Signup);
-
+userRouter.route("/getalluser").get(getAllUser);
+userRouter.route("/deleteuser/:id").delete(deleteUser)
+userRouter.route("/send-Email").post(EmailByAdmin)
