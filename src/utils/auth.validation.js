@@ -11,4 +11,24 @@ export const ProductSchema = z.object({
     KeyIngredients : z.string()
 });
 
+export const UserSchema = z.object({
+
+    Password: z.string()
+        .min(6, { message: "password must be at least 6 characters long" })
+        .max(20, { message: "password must be at least 20 characters long" }),
+
+
+    Email: z.string()
+        .email(),
+
+})
+
+export const LoginUser = z.object({
+    Email: z.string()
+        .email({ message: "Invalid email format" }),
+
+    Password: z.string()
+        .min(6, { message: "password must be at least 6 characters long" })
+        .max(20, { message: "password must be at least 20 characters long" }),
+})
 
