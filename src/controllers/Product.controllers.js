@@ -143,15 +143,76 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
     const { id } = req.params;
     console.log(id);
+
     try {
-        const product = await Product.findByIdAndDelete(id);
-        if (product.images && product.images.public_id) {
-            await cloudinary.uploader.destroy(product.images);
+        // First, find the product to get image details
+        const product = await Product.findById(id);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
         }
-        res.status(200).json({ messege: "product deleted", product });
+
+        // Delete images from Cloudinary first (if exists)
+        if (product.images && product.images.length > 0) {
+            try {
+                const deletePromises = product.images.map(imageUrl => {
+                    // Extract public_id from Cloudinary URL
+                    const publicId = extractPublicIdFromUrl(imageUrl);
+                    if (publicId) {
+                        return cloudinary.uploader.destroy(publicId);
+                    }
+                }).filter(Boolean); // Remove undefined values
+
+                await Promise.all(deletePromises);
+                console.log("Images deleted from Cloudinary");
+            } catch (cloudinaryError) {
+                console.log("Error deleting images from Cloudinary:", cloudinaryError);
+                // Continue with product deletion even if image deletion fails
+            }
+        }
+
+        // Then delete the product from database
+        await Product.findByIdAndDelete(id);
+
+        res.status(200).json({
+            success: true,
+            message: "Product deleted successfully",
+            product
+        });
+
     } catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, error });
+        console.log("Error deleting product:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error deleting product",
+            error: error.message
+        });
+    }
+};
+
+// Helper function to extract public_id from Cloudinary URL
+const extractPublicIdFromUrl = (url) => {
+    try {
+        // Example URL: http://res.cloudinary.com/dr7pigluo/image/upload/v1749624979/al6ketrda_...
+        const parts = url.split('/');
+        const uploadIndex = parts.indexOf('upload');
+
+        if (uploadIndex !== -1 && uploadIndex + 2 < parts.length) {
+            // Get the part after version (v1749624979)
+            let publicId = parts.slice(uploadIndex + 2).join('/');
+
+            // Remove file extension if present
+            publicId = publicId.split('.')[0];
+
+            return publicId;
+        }
+        return null;
+    } catch (error) {
+        console.log("Error extracting public_id from URL:", error);
+        return null;
     }
 };
 

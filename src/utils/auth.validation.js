@@ -13,6 +13,8 @@ export const ProductSchema = z.object({
 
 export const UserSchema = z.object({
 
+    FullName : z.string(),
+
     Password: z.string()
         .min(6, { message: "password must be at least 6 characters long" })
         .max(20, { message: "password must be at least 20 characters long" }),
