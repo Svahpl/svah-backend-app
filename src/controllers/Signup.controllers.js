@@ -1,18 +1,20 @@
+
 import  {User}  from "../models/user.models.js"
 import welcomeEmail from "../services/welcome.email.js";
 import  sendAdminEmail  from "../services/emailAdmin.js"
 
+
 export const Signup = async (req, res) => {
     console.log(req.body);
-    const { clerkUserId, FirstName, lastName, Email, Password , Token , ProfileImage } = req.body ;
+    const { clerkUserId, FirstName, lastName, Email, Password, Token, ProfileImage } = req.body;
     if (!FirstName || !lastName || !Email) {
-       return res.status(400).json({msg : "all detail required"})
+        return res.status(400).json({ msg: 'all detail required' });
     }
     const FullName = `${FirstName} ${lastName}`;
-    const ExistUser = await User.findOne({ Email })
+    const ExistUser = await User.findOne({ Email });
 
     if (ExistUser) {
-        return res.status(200).json({ msg: "user already exist not need to store"})
+        return res.status(200).json({ msg: 'user already exist not need to store' });
     }
 
     try {
@@ -23,21 +25,26 @@ export const Signup = async (req, res) => {
             Email: Email,
             Password: Password,
             ProfileImage,
-        })
-        const createduser = await User.findById(user._id).select("-password");
+        });
+        const createduser = await User.findById(user._id).select('-password');
         const option = {
             httpOnly: true,
-            secure: false, 
-            sameSite: "lax",
-        }
+            secure: false,
+            sameSite: 'lax',
+        };
         if (createduser) {
-            welcomeEmail(FullName, Email, "Welcome to Sri Venkateswara Agros and Herbs")
-            return res.status(200).cookie("authToken",Token,option).json({ msg: "user created sucseesfully !!!!" , user})
+            welcomeEmail(FullName, Email, 'Welcome to Sri Venkateswara Agros and Herbs');
+            return res
+                .status(200)
+                .cookie('authToken', Token, option)
+                .json({ msg: 'user created sucseesfully !!!!', user });
         }
     } catch (error) {
-        console.log(`error come from create user side controller ${error}`)
-        return res.status(400).json({ msg: "somthing went wrong !!!"})
+        console.log(`error come from create user side controller ${error}`);
+        return res.status(400).json({ msg: 'somthing went wrong !!!' });
     }
+};
+
 
 }
 
@@ -128,3 +135,15 @@ export const EmailByAdmin = async (req,res) => {
         });
     }
 }
+
+export const getUserByClerkId = async (req, res) => {
+    const { clerkId } = req.params;
+    try {
+        if (!clerkId) return res.status(404).json({ error: 'Clerk ID is required' });
+        const user = await User.find({ clerkUserId: clerkId });
+        return res.status(200).json({ user });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
