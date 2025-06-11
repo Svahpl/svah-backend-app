@@ -11,7 +11,7 @@ export const signup = async (req, res) => {
                 message: error.errors[0].message,
             });
         }
-        const { Email, Password } = data;
+        const {FullName , Email, Password } = data;
         const userExists = await User.findOne({ Email });
         if (userExists)
             return res.status(400).json({
@@ -22,6 +22,7 @@ export const signup = async (req, res) => {
             Email,
             Password: hashed_password,
             isAdmin: "false",
+            FullName,
         });
         await newUser.save();
         return res.status(200).json({ msg: "Success" });
