@@ -47,108 +47,105 @@ const getPaymentStatus = async orderId => {
     }
 };
 
+export const getOrders = () => {};
+
 export const createOrder = async (req, res) => {
+    const {
+        user,
+        phoneNumber,
+        shippingAddress,
+        totalAmount,
+        shipThrough,
+        items,
+        expectedDelivery,
+        paypalOid,
+    } = req.body;
     try {
-        const dollar = await getCurrentDollarinInr();
-        const {
-            userId,
-            phoneNumber,
-            shippingaddress,
-            finalAmount,
-            shipThrough,
-            items,
-            qty,
-            userSelectedWeight,
-            paypalOrderId,
-        } = req.body;
-
-        // Calculate product price
         console.log(items);
-        const productPrices = items.map(item => item.price * item.weight * item.qty);
-        console.log('PRODUCT PRICES ARRAY', productPrices);
-        const totalPrice = productPrices.reduce((currentTotal, item) => item + currentTotal, 0);
-        console.log('TOTAL PRICE CALCULATED BACKEND:', totalPrice);
-
-        // Calculate total weight from items
-        const totalWeight = items.reduce((acc, item) => acc + item.weight * item.qty, 0);
-
-        // Shipping method validation
-        if (totalWeight < 100 && shipThrough === 'ship') {
-            console.log('--- Shipping method should be Air. Weight under 100kg ---');
-            return res.status(400).json({
-                error: 'Weight is below 100 Kg. Shipping method mandatorily AIR required. Order Rejected.',
+        if (
+            !user ||
+            !phoneNumber ||
+            !shippingAddress ||
+            !totalAmount ||
+            !shipThrough ||
+            !items ||
+            !expectedDelivery
+        ) {
+            console.log(
+                'Missing fields:' +
+                    (!user ? ' user' : '') +
+                    (!phoneNumber ? ' phoneNumber' : '') +
+                    (!shippingAddress ? ' shippingAddress' : '') +
+                    (!totalAmount ? ' totalAmount' : '') +
+                    (!shipThrough ? ' shipThrough' : '') +
+                    (!items ? ' items' : '') +
+                    (!expectedDelivery ? ' expectedDelivery' : ''),
+            );
+            return res.status(404).json({
+                success: false,
+                message: 'All fields are required!',
             });
         }
-
-        // Get product references
-        const orderItems = await Promise.all(
-            items.map(async item => {
-                const product = await Product.findById(item._id);
-                if (!product) {
-                    console.log(`Product not found: ${item._id}`);
-                    throw new Error(`Product not found: ${item._id}`);
-                }
-                return {
-                    product: product._id,
-                    weight: item.weight,
-                    quantity: item.qty,
-                    price: product.price,
-                };
-            }),
-        );
-
-        // Calculate shipping cost
-        let shippingCost;
-        let shippingMethod;
-        const shipCost = 700 / dollar;
-        const airCost = 1000 / dollar;
-
-        if (shipThrough === 'air') {
-            shippingCost = totalWeight * airCost;
-            shippingMethod = 'airline';
-        } else if (shipThrough === 'ship') {
-            shippingCost = totalWeight * shipCost;
-            shippingMethod = 'ship';
-        }
-
-        const totalBill = totalPrice + shippingCost;
-
-        if (Math.trunc(totalBill) !== Math.trunc(finalAmount)) {
-            console.log('--- PRICE MISMATCH DETECTED ---');
-            console.log('Items:', items);
-            console.log('Dollar Rate:', dollar);
-            console.log('Shipping:', shipThrough);
-            console.log('Shipping Cost:', shippingCost);
-            console.log('Total Product Price:', totalPrice);
-            console.log('Total Bill (calculated):', totalBill);
-            console.log('Final Amount (from frontend):', finalAmount);
+        const productFound = await Product.findById(items[0].product);
+        if (!productFound)
             return res
-                .status(409)
-                .json({ success: false, error: 'PRICING MISMATCH IN BACKEND AND FRONTEND' });
+                .status(500)
+                .json({ success: false, message: 'Product not found in DB. Might be deleted' });
+        const productPrice = productFound.price;
+        console.log('debug product price', productPrice);
+        const frontendQuantity = items[0].quantity;
+        console.log('debug product qty', frontendQuantity);
+        const frontendWeight = items[0].weight;
+        console.log('debug frontend weight', frontendWeight);
+        const backendCalculation = productPrice * frontendQuantity * frontendWeight;
+        console.log('debug backendCalculation', backendCalculation);
+        let shippingCalc;
+        let dollar = await getCurrentDollarinInr();
+        console.log('debug dollar', dollar);
+        if (shipThrough === 'air') {
+            shippingCalc = frontendWeight * (1000 / dollar);
+        } else if (shipThrough === 'ship') {
+            shippingCalc = frontendWeight * (700 / dollar);
+        } else {
+            return res
+                .status(400)
+                .json({ success: false, message: 'Invalid Shipping Method from frontend.' });
         }
-
-        const finalTotalBill = finalAmount.toFixed(2);
-
-        // Create order
-        const order = await Order.create({
-            user: userId,
-            items: orderItems,
-            phoneNumber: phoneNumber,
-            totalAmount: finalTotalBill,
-            shippingAddress: shippingaddress,
-            shipThrough: shippingMethod,
-        });
-
-        // Check payment status
-        const payStatus = await getPaymentStatus(paypalOrderId);
-        if (payStatus === 'APPROVED') {
-            await Order.updateOne({ _id: order._id }, { paymentStatus: 'Success' });
+        const backendTotal = backendCalculation + shippingCalc;
+        if (Math.round(backendTotal) === Math.round(totalAmount)) {
+            console.log('No price mismatch');
+            const newOrder = await Order.create({
+                user: user,
+                items: [
+                    {
+                        product: items[0].product,
+                        quantity: frontendQuantity,
+                        price: productPrice,
+                        weight: frontendWeight,
+                    },
+                ],
+                phoneNumber: phoneNumber,
+                totalAmount: totalAmount,
+                shippingAddress: shippingAddress,
+                paymentStatus: 'Pending',
+            });
+            const paymentStatus = getPaymentStatus(paypalOid);
+            if (paymentStatus === 'APPROVED') {
+                newOrder.paymentStatus === 'Success';
+            }
+            return res.status(200).json({ success: true, message: 'Order Placed Successfully!' });
+        } else {
+            console.log('Price mismatch deteced');
+            console.log('BACKEND PRICE', backendTotal);
+            console.log('FRONTEND PRICE', totalAmount);
+            return res.status(500).json({ success: false });
         }
-
-        return res.status(200).json({ success: true, message: 'Order placed successfully!' });
     } catch (error) {
-        console.log('--- ERROR ---', error);
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({
+            success: false,
+            error,
+            message: error.message,
+        });
     }
 };
 
