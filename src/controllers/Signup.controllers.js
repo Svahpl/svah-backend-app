@@ -136,6 +136,8 @@ export const EmailByAdmin = async (req,res) => {
     }
 }
 
+
+
 export const getUserByClerkId = async (req, res) => {
     const { clerkId } = req.params;
     try {
@@ -146,4 +148,5 @@ export const getUserByClerkId = async (req, res) => {
         return res.status(500).json({ error });
     }
 };
+
 

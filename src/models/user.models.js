@@ -73,6 +73,12 @@ const UserSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        otp: {
+            type: String,
+        },
+        otpExpiry: {
+            type: Date,
+        },
         wishlist: [
             {
                 productId: {
