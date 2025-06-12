@@ -14,14 +14,14 @@ import {
 export const productRouter = new Router();
 
 
-productRouter.route("/add").post(
+productRouter.route("/add").post(AdminVerify,
     upload.array("images", 5),
     productController
   );
 
 productRouter.get('/get-product/:id',getProductById)
 
-productRouter.delete("/delete-product/:id", AdminVerify, deleteProduct);
-productRouter.get("/get-all",getAllProducts);
-productRouter.put("/update-product/:id",AdminVerify,upload.array("images",5),updateProduct);
+productRouter.delete("/delete-product/:id", AdminVerify , deleteProduct);
+productRouter.get("/get-all",AdminVerify,getAllProducts);
+productRouter.put("/update-product/:id", AdminVerify ,upload.array("images",5),updateProduct);
 productRouter.put("/rate/:productId", addRating);

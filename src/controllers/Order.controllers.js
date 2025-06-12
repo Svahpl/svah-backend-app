@@ -60,8 +60,10 @@ export const createOrder = async (req, res) => {
         expectedDelivery,
         paypalOid,
     } = req.body;
+
     try {
         console.log(items);
+
         if (
             !user ||
             !phoneNumber ||
@@ -73,35 +75,38 @@ export const createOrder = async (req, res) => {
         ) {
             console.log(
                 'Missing fields:' +
-                    (!user ? ' user' : '') +
-                    (!phoneNumber ? ' phoneNumber' : '') +
-                    (!shippingAddress ? ' shippingAddress' : '') +
-                    (!totalAmount ? ' totalAmount' : '') +
-                    (!shipThrough ? ' shipThrough' : '') +
-                    (!items ? ' items' : '') +
-                    (!expectedDelivery ? ' expectedDelivery' : ''),
+                (!user ? ' user' : '') +
+                (!phoneNumber ? ' phoneNumber' : '') +
+                (!shippingAddress ? ' shippingAddress' : '') +
+                (!totalAmount ? ' totalAmount' : '') +
+                (!shipThrough ? ' shipThrough' : '') +
+                (!items ? ' items' : '') +
+                (!expectedDelivery ? ' expectedDelivery' : '')
             );
             return res.status(404).json({
                 success: false,
                 message: 'All fields are required!',
             });
         }
+
         const productFound = await Product.findById(items[0].product);
         if (!productFound)
             return res
                 .status(500)
                 .json({ success: false, message: 'Product not found in DB. Might be deleted' });
+
         const productPrice = productFound.price;
+        const productTitle = productFound.title;
+        const productImages = productFound.images;
+
         console.log('debug product price', productPrice);
         const frontendQuantity = items[0].quantity;
-        console.log('debug product qty', frontendQuantity);
         const frontendWeight = items[0].weight;
-        console.log('debug frontend weight', frontendWeight);
+
         const backendCalculation = productPrice * frontendQuantity * frontendWeight;
-        console.log('debug backendCalculation', backendCalculation);
         let shippingCalc;
-        let dollar = await getCurrentDollarinInr();
-        console.log('debug dollar', dollar);
+
+        const dollar = await getCurrentDollarinInr();
         if (shipThrough === 'air') {
             shippingCalc = frontendWeight * (1000 / dollar);
         } else if (shipThrough === 'ship') {
@@ -111,14 +116,17 @@ export const createOrder = async (req, res) => {
                 .status(400)
                 .json({ success: false, message: 'Invalid Shipping Method from frontend.' });
         }
+
         const backendTotal = backendCalculation + shippingCalc;
+
         if (Math.round(backendTotal) === Math.round(totalAmount)) {
-            console.log('No price mismatch');
             const newOrder = await Order.create({
                 user: user,
                 items: [
                     {
                         product: items[0].product,
+                        title: productTitle,
+                        images: productImages,
                         quantity: frontendQuantity,
                         price: productPrice,
                         weight: frontendWeight,
@@ -127,18 +135,21 @@ export const createOrder = async (req, res) => {
                 phoneNumber: phoneNumber,
                 totalAmount: totalAmount,
                 shippingAddress: shippingAddress,
+                orderStatus: 'Pending', // add this if you have it in schema
                 paymentStatus: 'Pending',
+                expectedDelivery: expectedDelivery,
             });
+
             const paymentStatus = getPaymentStatus(paypalOid);
             if (paymentStatus === 'APPROVED') {
-                newOrder.paymentStatus === 'Success';
+                newOrder.paymentStatus = 'Success';
+                await newOrder.save(); // Save the updated status
             }
+
             return res.status(200).json({ success: true, message: 'Order Placed Successfully!' });
         } else {
-            console.log('Price mismatch deteced');
-            console.log('BACKEND PRICE', backendTotal);
-            console.log('FRONTEND PRICE', totalAmount);
-            return res.status(500).json({ success: false });
+            console.log('Price mismatch detected');
+            return res.status(500).json({ success: false, message: 'Price mismatch' });
         }
     } catch (error) {
         return res.status(500).json({
@@ -148,6 +159,7 @@ export const createOrder = async (req, res) => {
         });
     }
 };
+
 
 export const getAddress = async (req, res) => {
     const { orderId } = req.params;
@@ -185,6 +197,58 @@ export const generateFeatureProducts = async (req, res) => {
         console.error(`Error generating featured products: ${error}`);
         return res.status(500).json({
             success: false,
+            error: error.message,
+        });
+    }
+};
+
+export const getAllOrder = async (req,res) => {
+    try {
+        const orders = await Order.find();
+        res.status(200).json({ msg : "all order fetched" , orders})
+    } catch (error) {
+        console.log(error)
+        res.status(402).json({ msg: "error in fetching product" , error})
+    }
+}
+
+
+export const updateOrderStatus = async (req, res) => {
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['Pending', 'Shipped', 'Delivered', 'Cancelled'];
+
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid status value provided.",
+        });
+    }
+
+    try {
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found",
+            });
+        }
+
+        order.orderStatus = status; // Or use order.status if you store a separate field
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: `Order status updated to ${status}`,
+            order,
+        });
+    } catch (error) {
+        console.error("Error updating order status:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Something went wrong while updating status",
             error: error.message,
         });
     }

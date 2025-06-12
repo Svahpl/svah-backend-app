@@ -122,7 +122,7 @@ export const getUserCart = async (req, res) => {
         user.cart.forEach((item) => {
             cartItemsMap[item.productId.toString()] = {
                 quantity: item.quantity,
-                cartItemId: item._id, // This is the _id of the cart item in user's cart
+                cartId: item._id, // This is the _id of the cart item in user's cart
             };
         });
 
@@ -134,12 +134,12 @@ export const getUserCart = async (req, res) => {
         // Attach quantity and cart item ID to each product
         const itemsWithQuantity = products.map((product) => {
             const productIdStr = product._id.toString();
-            const { quantity, cartItemId } = cartItemsMap[productIdStr];
+            const { quantity, cartId } = cartItemsMap[productIdStr];
 
             return {
                 ...product.toObject(), // Spread full product details
                 quantity,
-                cartItemId, // This is the cart item _id from user's cart
+                cartId, // This is the cart item _id from user's cart
             };
         });
 
@@ -147,7 +147,6 @@ export const getUserCart = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Cart items fetched successfully",
-            cartId: user._id, // still user's ID
             items: itemsWithQuantity,
         });
 

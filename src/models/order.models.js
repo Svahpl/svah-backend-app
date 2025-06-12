@@ -10,26 +10,15 @@ const orderSchema = new mongoose.Schema(
         //  rzpId: { type: String, required: false },
         items: [
             {
-                product: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: 'Product',
-                    required: true,
-                },
-                quantity: {
-                    type: Number,
-                    required: true,
-                    min: 1,
-                },
-                price: {
-                    type: Number,
-                    required: true,
-                },
-                weight: {
-                    type: Number,
-                    required: true,
-                },
-            },
+                product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+                title: String,
+                images: [String],
+                quantity: Number,
+                price: Number,
+                weight: Number,
+            }
         ],
+        
         phoneNumber: {
             type: String,
             required: true,

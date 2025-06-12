@@ -1,4 +1,7 @@
 import mongoose from 'mongoose';
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+
 const UserSchema = new mongoose.Schema(
     {
         clerkUserId: {
@@ -11,19 +14,14 @@ const UserSchema = new mongoose.Schema(
         },
         FullName: {
             type: String,
-            required: true,
+            required: false,
         },
         Email: {
             type: String,
             required: true,
         },
         Password: {
-            type: String,
-            required: false,
-        },
-        Token: {
-            type: String,
-            required: false,
+            type: String
         },
         isAdmin: {
             type: Boolean,
@@ -75,6 +73,12 @@ const UserSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        otp: {
+            type: String,
+        },
+        otpExpiry: {
+            type: Date,
+        },
         wishlist: [
             {
                 productId: {
@@ -89,7 +93,33 @@ const UserSchema = new mongoose.Schema(
     { timestamps: true },
 );
 
+UserSchema.pre("save", async function (next) {
+    const user = this;
+    if (!user.isModified("password")) {
+        next();
+    }
+});
 
+UserSchema.methods.generateAuthToken = async function () {
+    try {
+        return jwt.sign(
+            {
+                userId: this._id.toString(),
+                email: this.Email,
+                isAdmin: this.isAdmin,
+            },
+            process.env.JWT_SECRET_KEY,
+            {
+                expiresIn: process.env.TOKEN_EXPIRED_TIME,
+            }
+        );
+    } catch (error) {
+        console.log(`${error}`);
+    }
+};
 
+UserSchema.methods.comparePassword = async function (Password) {
+    return bcrypt.compare(Password, this.Password);
+};
 
 export const User = new mongoose.model('User', UserSchema);
