@@ -217,11 +217,7 @@ const otpEmailTemplateModern = (email, otp) => `<!DOCTYPE html>
                 <h3>🔒 Security Notice</h3>
                 <p>This code is confidential and should never be shared. If you didn't request this verification, please contact our support team immediately.</p>
             </div>
-            
-            <center>
-                <a href="https://srivenkateswaraagros.com/verify" class="cta-button">VERIFY MY ACCOUNT</a>
-            </center>
-            
+                        
             <p style="text-align: center; margin-top: 30px; color: #4a5568;">
                 Once verified, you'll have complete access to browse and purchase from our premium collection of natural wellness products and herbs.
             </p>

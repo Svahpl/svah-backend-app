@@ -46,7 +46,6 @@ export const Signup = async (req, res) => {
 };
 
 
-}
 
 export const getAllUser = async (req, res) => {
     try {
