@@ -18,3 +18,4 @@ userRouter.route("/login").post(login)
 userRouter.post("/otp-for-password", passwordOtp);
 userRouter.post("/verify-email", verifyEmail);
 userRouter.post("/reset-password", resetPassword);
+

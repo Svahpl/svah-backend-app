@@ -27,7 +27,6 @@ const orderSchema = new mongoose.Schema(
                 weight: {
                     type: Number,
                     required: true,
-                    enum: [1, 5, 10, 25, 50, 100]
                 }
             },
         ],
