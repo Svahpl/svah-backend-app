@@ -54,112 +54,119 @@ export const createOrder = async (req, res) => {
         user,
         phoneNumber,
         shippingAddress,
-        totalAmount,
         shipThrough,
+        totalAmount,
         items,
         expectedDelivery,
         paypalOid,
     } = req.body;
 
     try {
-        console.log(items);
-
         if (
             !user ||
             !phoneNumber ||
             !shippingAddress ||
-            !totalAmount ||
             !shipThrough ||
             !items ||
             !expectedDelivery
         ) {
-            console.log(
-                'Missing fields:' +
-                (!user ? ' user' : '') +
-                (!phoneNumber ? ' phoneNumber' : '') +
-                (!shippingAddress ? ' shippingAddress' : '') +
-                (!totalAmount ? ' totalAmount' : '') +
-                (!shipThrough ? ' shipThrough' : '') +
-                (!items ? ' items' : '') +
-                (!expectedDelivery ? ' expectedDelivery' : '')
-            );
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
                 message: 'All fields are required!',
             });
         }
 
-        const productFound = await Product.findById(items[0].product);
-        if (!productFound)
-            return res
-                .status(500)
-                .json({ success: false, message: 'Product not found in DB. Might be deleted' });
-
-        const productPrice = productFound.price;
-        const productTitle = productFound.title;
-        const productImages = productFound.images;
-
-        console.log('debug product price', productPrice);
-        const frontendQuantity = items[0].quantity;
-        const frontendWeight = items[0].weight;
-
-        const backendCalculation = productPrice * frontendQuantity * frontendWeight;
-        let shippingCalc;
-
-        const dollar = await getCurrentDollarinInr();
-        if (shipThrough === 'air') {
-            shippingCalc = frontendWeight * (1000 / dollar);
-        } else if (shipThrough === 'ship') {
-            shippingCalc = frontendWeight * (700 / dollar);
-        } else {
-            return res
-                .status(400)
-                .json({ success: false, message: 'Invalid Shipping Method from frontend.' });
+        const userFound = await User.findById(user);
+        if (!userFound) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found in DB.',
+            });
         }
 
-        const backendTotal = backendCalculation + shippingCalc;
+        let totalCalc = 0;
+        let totalWeight = 0;
+        const enrichedItems = [];
 
-        if (Math.round(backendTotal) === Math.round(totalAmount)) {
-            const newOrder = await Order.create({
-                user: user,
-                items: [
-                    {
-                        product: items[0].product,
-                        title: productTitle,
-                        images: productImages,
-                        quantity: frontendQuantity,
-                        price: productPrice,
-                        weight: frontendWeight,
-                    },
-                ],
-                phoneNumber: phoneNumber,
-                totalAmount: totalAmount,
-                shippingAddress: shippingAddress,
-                orderStatus: 'Pending', // add this if you have it in schema
-                paymentStatus: 'Pending',
-                expectedDelivery: expectedDelivery,
-            });
-
-            const paymentStatus = getPaymentStatus(paypalOid);
-            if (paymentStatus === 'APPROVED') {
-                newOrder.paymentStatus = 'Success';
-                await newOrder.save(); // Save the updated status
+        for (const item of items) {
+            const product = await Product.findById(item.product);
+            if (!product) {
+                return res.status(404).json({
+                    success: false,
+                    message: `Product with ID ${item.product} not found`,
+                });
             }
 
-            return res.status(200).json({ success: true, message: 'Order Placed Successfully!' });
-        } else {
-            console.log('Price mismatch detected');
-            return res.status(500).json({ success: false, message: 'Price mismatch' });
+            const subtotal = product.price * item.quantity * item.weight;
+            totalCalc += subtotal;
+            totalWeight += item.weight;
+
+            enrichedItems.push({
+                product: item.product,
+                title: product.title,
+                images: product.images,
+                quantity: item.quantity,
+                price: product.price,
+                weight: item.weight,
+            });
         }
+
+        const dollar = await getCurrentDollarinInr();
+        let shippingCalc;
+        if (shipThrough === 'air') {
+            shippingCalc = totalWeight * (1000 / dollar);
+        } else if (shipThrough === 'ship') {
+            shippingCalc = totalWeight * (700 / dollar);
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid Shipping Method',
+            });
+        }
+
+        const backendTotal = totalCalc + shippingCalc;
+
+        if (Math.round(backendTotal) !== Math.round(totalAmount)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Price mismatch between frontend and backend',
+            });
+        }
+
+        const newOrder = await Order.create({
+            user: userFound._id,
+            userName: userFound.fullname,
+            userEmail: userFound.email,
+            phoneNumber,
+            shippingAddress,
+            totalAmount,
+            shipThrough,
+            items: enrichedItems,
+            orderStatus: 'Pending',
+            paymentStatus: 'Pending',
+            expectedDelivery,
+        });
+
+        const paymentStatus = getPaymentStatus(paypalOid);
+        if (paymentStatus === 'APPROVED') {
+            newOrder.paymentStatus = 'Success';
+            await newOrder.save();
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Order Placed Successfully!',
+            order: newOrder,
+        });
+
     } catch (error) {
         return res.status(500).json({
             success: false,
-            error,
-            message: error.message,
+            message: 'Something went wrong while creating order',
+            error: error.message,
         });
     }
 };
-
 
 export const getAddress = async (req, res) => {
     const { orderId } = req.params;
@@ -236,7 +243,7 @@ export const updateOrderStatus = async (req, res) => {
             });
         }
 
-        order.orderStatus = status; // Or use order.status if you store a separate field
+        order.paymentStatus = status; // Or use order.status if you store a separate field
         await order.save();
 
         return res.status(200).json({
