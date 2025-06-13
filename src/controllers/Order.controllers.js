@@ -149,7 +149,8 @@ export const createOrder = async (req, res) => {
                 totalAmount: totalAmount.toLocaleString(),
                 paymentStatus: newOrder.paymentStatus === 'Success' ? 'Paid' : 'Pending',
                 items: [
-                    {
+                    {   
+                        icon: "🌿",
                         name: productFound.title,
                         description: `${frontendWeight}kg • Premium Quality`,
                         price: (productPrice * frontendQuantity * frontendWeight).toLocaleString(),
