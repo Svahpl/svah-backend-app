@@ -3,6 +3,7 @@ import { Product } from '../models/product.models.js';
 import { Order } from '../models/order.models.js';
 import axios from 'axios';
 import got from 'got';
+import orderConfirmationEmail from "../services/OrderConform.js"
 
 const getCurrentDollarinInr = async () => {
     try {
@@ -87,7 +88,7 @@ export const createOrder = async (req, res) => {
             });
         }
 
-        const userFound = await User.findById(user); // ✅ correct
+        const userFound = await User.findById(user); 
 
 
         const productFound = await Product.findById(items[0].product);
@@ -141,6 +142,26 @@ export const createOrder = async (req, res) => {
             if (paymentStatus === 'APPROVED') {
                 newOrder.paymentStatus === 'Success';
             }
+            
+            const orderData = {
+                orderNumber: `#SVAH${Date.now()}`,
+                orderDate: new Date().toLocaleDateString(),
+                totalAmount: totalAmount.toLocaleString(),
+                paymentStatus: newOrder.paymentStatus === 'Success' ? 'Paid' : 'Pending',
+                items: [
+                    {
+                        name: productFound.title,
+                        description: `${frontendWeight}kg • Premium Quality`,
+                        price: (productPrice * frontendQuantity * frontendWeight).toLocaleString(),
+                        quantity: frontendQuantity.toString()
+                    }
+                ],
+                deliveryAddress: shippingAddress.replace(/,/g, '<br/>'),
+                expectedDelivery: new Date(expectedDelivery).toLocaleDateString()
+            };
+
+            await orderConfirmationEmail(userFound.FullName, userFound.Email, orderData);
+
             return res.status(200).json({ success: true, message: 'Order Placed Successfully!' });
         } else {
             console.log('Price mismatch deteced');
