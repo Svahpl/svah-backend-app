@@ -22,6 +22,6 @@ productRouter.route("/add").post(AdminVerify,
 productRouter.get('/get-product/:id',getProductById)
 
 productRouter.delete("/delete-product/:id", AdminVerify , deleteProduct);
-productRouter.get("/get-all",AdminVerify,getAllProducts);
+productRouter.get("/get-all",getAllProducts);
 productRouter.put("/update-product/:id", AdminVerify ,upload.array("images",5),updateProduct);
 productRouter.put("/rate/:productId", addRating);
