@@ -140,7 +140,7 @@ export const createOrder = async (req, res) => {
             });
             const paymentStatus = await getPaymentStatus(paypalOid);
             if (paymentStatus === 'APPROVED') {
-                newOrder.paymentStatus === 'Success';
+                newOrder.paymentStatus = 'Success';
                 await newOrder.save();
             }
             
