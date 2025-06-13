@@ -138,9 +138,10 @@ export const createOrder = async (req, res) => {
                 shippingAddress: shippingAddress,
                 paymentStatus: 'Pending',
             });
-            const paymentStatus = getPaymentStatus(paypalOid);
+            const paymentStatus = await getPaymentStatus(paypalOid);
             if (paymentStatus === 'APPROVED') {
                 newOrder.paymentStatus === 'Success';
+                await newOrder.save();
             }
             
             const orderData = {
@@ -161,7 +162,13 @@ export const createOrder = async (req, res) => {
                 expectedDelivery: new Date(expectedDelivery).toLocaleDateString()
             };
 
-            await orderConfirmationEmail(userFound.FullName, userFound.Email, orderData);
+            await orderConfirmationEmail(
+                userFound.FullName,
+                userFound.Email,
+                "Order Confirmation - Shree Venkateswara Agros and Herbs",
+                orderData
+            );
+            
 
             return res.status(200).json({ success: true, message: 'Order Placed Successfully!' });
         } else {
