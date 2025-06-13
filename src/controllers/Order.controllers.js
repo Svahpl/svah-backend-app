@@ -87,7 +87,8 @@ export const createOrder = async (req, res) => {
             });
         }
 
-        const userFound = await User.findById({ user });
+        const userFound = await User.findById(user); // ✅ correct
+
 
         const productFound = await Product.findById(items[0].product);
         if (!productFound)
