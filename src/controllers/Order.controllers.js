@@ -48,7 +48,23 @@ const getPaymentStatus = async orderId => {
     }
 };
 
-export const getOrders = () => {};
+export const getOrders = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        console.log(userId);
+        const OrdersFound = await Order.find({ user: userId });
+        return res.status(200).json({ OrdersFound });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
+    }
+};
+
+// Helper function for price validation
+const isPriceValid = (backendTotal, frontendTotal, tolerancePercent = 0.1) => {
+    const percentageDifference = (Math.abs(backendTotal - frontendTotal) / backendTotal) * 100;
+    return percentageDifference <= tolerancePercent;
+};
 
 export const createOrder = async (req, res) => {
     const {
@@ -144,11 +160,15 @@ export const createOrder = async (req, res) => {
         console.log('debug backend total', backendTotal);
         console.log('debug frontend total', totalAmount);
 
-        // Compare with a small tolerance for floating point differences
-        if (Math.abs(backendTotal - totalAmount) > 0.5) {
+        // Use percentage-based price validation with 0.1% tolerance
+        if (!isPriceValid(backendTotal, totalAmount, 0.1)) {
+            const percentageDifference =
+                (Math.abs(backendTotal - totalAmount) / backendTotal) * 100;
             console.log('Price mismatch detected');
             console.log('BACKEND CALCULATION:', backendTotal);
             console.log('FRONTEND SUBMITTED:', totalAmount);
+            console.log('PERCENTAGE DIFFERENCE:', percentageDifference.toFixed(4) + '%');
+
             return res.status(400).json({
                 success: false,
                 message: 'Price verification failed',
@@ -156,6 +176,7 @@ export const createOrder = async (req, res) => {
                     backendCalculation: backendTotal,
                     frontendSubmitted: totalAmount,
                     difference: Math.abs(backendTotal - totalAmount),
+                    percentageDifference: percentageDifference.toFixed(4) + '%',
                 },
             });
         }
@@ -190,8 +211,8 @@ export const createOrder = async (req, res) => {
         if (paypalOid) {
             const paymentStatus = await getPaymentStatus(paypalOid);
             if (paymentStatus === 'APPROVED') {
-                newOrder.paymentStatus === 'Success';
-
+                newOrder.paymentStatus = 'Success'; // Fixed: was using === instead of =
+                await newOrder.save(); // Save the updated payment status
             }
         }
 
