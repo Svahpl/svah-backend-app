@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 const UserSchema = new mongoose.Schema(
     {
@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema(
             required: true,
         },
         Password: {
-            type: String
+            type: String,
         },
         isAdmin: {
             type: Boolean,
@@ -66,6 +66,7 @@ const UserSchema = new mongoose.Schema(
                 addressLine2: String,
                 city: { type: String },
                 state: { type: String },
+                country: { type: String },
                 pinCode: { type: String },
             },
         ],
@@ -83,19 +84,18 @@ const UserSchema = new mongoose.Schema(
             {
                 productId: {
                     type: mongoose.Schema.Types.ObjectId,
-                    ref: "Product",
+                    ref: 'Product',
                     required: true,
                 },
             },
         ],
-          
     },
     { timestamps: true },
 );
 
-UserSchema.pre("save", async function (next) {
+UserSchema.pre('save', async function (next) {
     const user = this;
-    if (!user.isModified("password")) {
+    if (!user.isModified('password')) {
         next();
     }
 });
@@ -111,7 +111,7 @@ UserSchema.methods.generateAuthToken = async function () {
             process.env.JWT_SECRET_KEY,
             {
                 expiresIn: process.env.TOKEN_EXPIRED_TIME,
-            }
+            },
         );
     } catch (error) {
         console.log(`${error}`);
