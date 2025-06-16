@@ -1,8 +1,6 @@
-
-import  {User}  from "../models/user.models.js"
-import welcomeEmail from "../services/welcome.email.js";
-import  sendAdminEmail  from "../services/emailAdmin.js"
-
+import { User } from '../models/user.models.js';
+import welcomeEmail from '../services/welcome.email.js';
+import sendAdminEmail from '../services/emailAdmin.js';
 
 export const Signup = async (req, res) => {
     console.log(req.body);
@@ -45,21 +43,32 @@ export const Signup = async (req, res) => {
     }
 };
 
-
-
 export const getAllUser = async (req, res) => {
     try {
-        const users = await User.find().select("FullName Email ProfileImage  ");
+        const users = await User.find().select('FullName Email ProfileImage  ');
         if (!users.length) {
-            return res.status(404).json({ message: "No users found" });
+            return res.status(404).json({ message: 'No users found' });
         }
-        res.status(200).json({ message: "Users found", users });
+        res.status(200).json({ message: 'Users found', users });
     } catch (error) {
-        console.error("Error in getAllUser:", error);
-        res.status(500).json({ message: "Internal server error" });
+        console.error('Error in getAllUser:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 };
 
+export const getAdmin = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId)
+        console.log(user);
+        if (!user) {
+            return res.status(400).json({ msg: "User not found" });
+        }
+        return res.status(200).json({ message: "User found", user });
+    } catch (error) {
+        console.error("Error in getUser:", error);
+        return res.status(500).json({ msg: "Internal server error", error });
+    }
+  };
 export const getAdmin = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId)
@@ -78,20 +87,19 @@ export const getAdmin = async (req, res) => {
 export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
-        console.log("User ID to delete:", id);
+        console.log('User ID to delete:', id);
 
         const user = await User.findByIdAndDelete(id);
         if (!user) {
-            return res.status(404).json({ messege: "User not found" })
+            return res.status(404).json({ messege: 'User not found' });
         }
-        res.status(200).json({ messege: "User deleted successfully", user });
+        res.status(200).json({ messege: 'User deleted successfully', user });
+    } catch (error) {
+        console.log(error);
     }
-    catch (error) {
-        console.log(error)
-    }
-}
+};
 
-export const EmailByAdmin = async (req,res) => {
+export const EmailByAdmin = async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
 
@@ -99,7 +107,7 @@ export const EmailByAdmin = async (req,res) => {
         if (!name || !email || !subject || !message) {
             return res.status(400).json({
                 success: false,
-                message: "All fields are required: name, email, subject, message"
+                message: 'All fields are required: name, email, subject, message',
             });
         }
 
@@ -108,7 +116,7 @@ export const EmailByAdmin = async (req,res) => {
         if (!emailRegex.test(email)) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid email format"
+                message: 'Invalid email format',
             });
         }
 
@@ -117,25 +125,22 @@ export const EmailByAdmin = async (req,res) => {
 
         res.status(200).json({
             success: true,
-            message: "Email sent successfully",
+            message: 'Email sent successfully',
             data: {
                 recipient: email,
                 subject: subject,
-                sentAt: new Date().toISOString()
-            }
+                sentAt: new Date().toISOString(),
+            },
         });
-
     } catch (error) {
-        console.error("Admin email sending error:", error);
+        console.error('Admin email sending error:', error);
         res.status(500).json({
             success: false,
-            message: "Failed to send email",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Failed to send email',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined,
         });
     }
-}
-
-
+};
 
 export const getUserByClerkId = async (req, res) => {
     const { clerkId } = req.params;
@@ -148,4 +153,81 @@ export const getUserByClerkId = async (req, res) => {
     }
 };
 
+export const getUserAddress = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const addressFound = await User.findById(userId).select('address phoneNumber');
+        if (!userId || !addressFound) {
+            return res
+                .status(400)
+                .json({ success: false, message: 'User ID is req. OR Address not added.' });
+        }
+        return res.status(200).json({ address: addressFound });
+    } catch (error) {
+        console.log(`Error getting User's address: ${error}`);
+    }
+};
 
+export const updateUserAddress = async (req, res) => {
+    const { userId } = req.params;
+    const { addressId, newAddress } = req.body;
+    if (!userId || !addressId || !newAddress)
+        return res
+            .status(400)
+            .json({ message: 'Both User and address ID is required OR new Address Missing!' });
+    try {
+        const userFound = await User.findById(userId);
+        if (Array.isArray(userFound.address)) {
+            const matchedAddress = userFound.address.find(
+                addr => addr._id.toString() === addressId.toString(),
+            );
+            matchedAddress.addressLine1 = newAddress.addressLine1;
+            matchedAddress.addressLine2 = newAddress.addressLine2;
+            matchedAddress.city = newAddress.city;
+            matchedAddress.state = newAddress.state;
+            matchedAddress.country = newAddress.country;
+            matchedAddress.pinCode = newAddress.pinCode;
+            matchedAddress.phone = newAddress.phone;
+            await userFound.save();
+            return res.status(200).json({ updatedAddress: matchedAddress });
+        } else {
+            throw new Error('Address is undefined or not an array');
+        }
+        return;
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({});
+    }
+};
+
+export const addNewAddress = async (req, res) => {
+    const { userId } = req.params;
+    const { newAddress } = req.body;
+    try {
+        const userFound = await User.findById(userId);
+        userFound.address.push(newAddress);
+        await userFound.save();
+        return res.status(200).json({ success: true, message: 'Address Added Successfully' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export const deleteAddress = async (req, res) => {
+    const { userId, addressId } = req.params;
+
+    try {
+        const result = await User.updateOne(
+            { _id: userId },
+            { $pull: { address: { _id: addressId } } },
+        );
+
+        if (result.modifiedCount === 0) {
+            return res.status(404).json({ message: 'Address not found or already deleted' });
+        }
+
+        return res.status(200).json({ message: 'Address deleted successfully' });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};

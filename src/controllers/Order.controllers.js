@@ -3,7 +3,7 @@ import { Product } from '../models/product.models.js';
 import { Order } from '../models/order.models.js';
 import axios from 'axios';
 import got from 'got';
-import orderConfirmationEmail from "../services/OrderConform.js"
+import orderConfirmationEmail from '../services/OrderConform.js';
 
 const getCurrentDollarinInr = async () => {
     try {
@@ -48,7 +48,23 @@ const getPaymentStatus = async orderId => {
     }
 };
 
-export const getOrders = () => {};
+export const getOrders = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        console.log(userId);
+        const OrdersFound = await Order.find({ user: userId });
+        return res.status(200).json({ OrdersFound });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
+    }
+};
+
+// Helper function for price validation
+const isPriceValid = (backendTotal, frontendTotal, tolerancePercent = 0.1) => {
+    const percentageDifference = (Math.abs(backendTotal - frontendTotal) / backendTotal) * 100;
+    return percentageDifference <= tolerancePercent;
+};
 
 export const createOrder = async (req, res) => {
     const {
@@ -61,8 +77,12 @@ export const createOrder = async (req, res) => {
         expectedDelivery,
         paypalOid,
     } = req.body;
+
     try {
+        console.log('---debug price:', totalAmount);
         console.log(items);
+
+        // Validate required fields
         if (
             !user ||
             !phoneNumber ||
@@ -74,118 +94,170 @@ export const createOrder = async (req, res) => {
         ) {
             console.log(
                 'Missing fields:' +
-                (!user ? ' user' : '') +
-                (!phoneNumber ? ' phoneNumber' : '') +
-                (!shippingAddress ? ' shippingAddress' : '') +
-                (!totalAmount ? ' totalAmount' : '') +
-                (!shipThrough ? ' shipThrough' : '') +
-                (!items ? ' items' : '') +
-                (!expectedDelivery ? ' expectedDelivery' : ''),
+                    (!user ? ' user' : '') +
+                    (!phoneNumber ? ' phoneNumber' : '') +
+                    (!shippingAddress ? ' shippingAddress' : '') +
+                    (!totalAmount ? ' totalAmount' : '') +
+                    (!shipThrough ? ' shipThrough' : '') +
+                    (!items ? ' items' : '') +
+                    (!expectedDelivery ? ' expectedDelivery' : ''),
             );
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
                 message: 'All fields are required!',
             });
         }
 
-        const userFound = await User.findById(user); 
-
+        const userFound = await User.findById(user);
+        if (!userFound) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+            });
+        }
 
         const productFound = await Product.findById(items[0].product);
-        if (!productFound)
-            return res
-                .status(500)
-                .json({ success: false, message: 'Product not found in DB. Might be deleted' });
-        const productPrice = productFound.price;
-        console.log('debug product price', productPrice);
-        const frontendQuantity = items[0].quantity;
-        console.log('debug product qty', frontendQuantity);
-        const frontendWeight = items[0].weight;
-        console.log('debug frontend weight', frontendWeight);
-        const backendCalculation = productPrice * frontendQuantity * frontendWeight;
-        console.log('debug backendCalculation', backendCalculation);
-        let shippingCalc;
-        let dollar = await getCurrentDollarinInr();
-        console.log('debug dollar', dollar);
-        if (shipThrough === 'air') {
-            shippingCalc = frontendWeight * (1000 / dollar);
-        } else if (shipThrough === 'ship') {
-            shippingCalc = frontendWeight * (700 / dollar);
-        } else {
-            return res
-                .status(400)
-                .json({ success: false, message: 'Invalid Shipping Method from frontend.' });
-        }
-        const backendTotal = backendCalculation + shippingCalc;
-        if (Math.round(backendTotal) === Math.round(totalAmount)) {
-            console.log('No price mismatch');
-            const newOrder = await Order.create({
-                user: user,
-                userName: userFound.FullName,
-                userEmail: userFound.Email,
-                items: [
-                    {
-                        product: items[0].product,
-                        title: productFound.title,
-                        images: productFound.images,
-                        quantity: frontendQuantity,
-                        price: productPrice,
-                        weight: frontendWeight,
-                    },
-                ],
-                phoneNumber: phoneNumber,
-                totalAmount: totalAmount,
-                shippingAddress: shippingAddress,
-                paymentStatus: 'Pending',
+        if (!productFound) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found in DB. Might be deleted',
             });
+        }
+
+        const productPrice = productFound.price;
+        const frontendQuantity = items[0].quantity;
+        const frontendWeightPerUnit = items[0].weight;
+        const totalWeight = frontendWeightPerUnit * frontendQuantity;
+
+        console.log('debug product price', productPrice);
+        console.log('debug product qty', frontendQuantity);
+        console.log('debug frontend weight per unit', frontendWeightPerUnit);
+        console.log('debug total weight', totalWeight);
+
+        const backendProductTotal = productPrice * totalWeight;
+        console.log('debug backend product total', backendProductTotal);
+
+        // Get current USD to INR rate
+        let dollar = await getCurrentDollarinInr();
+        console.log('debug dollar rate', dollar);
+
+        // Calculate shipping cost based on total weight
+        let shippingCost;
+        if (shipThrough === 'air') {
+            shippingCost = totalWeight * (1000 / dollar);
+        } else if (shipThrough === 'ship') {
+            shippingCost = totalWeight * (700 / dollar);
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid Shipping Method',
+            });
+        }
+
+        console.log('debug shipping cost', shippingCost);
+
+        const backendTotal = backendProductTotal + shippingCost;
+        console.log('debug backend total', backendTotal);
+        console.log('debug frontend total', totalAmount);
+
+        // Use percentage-based price validation with 0.1% tolerance
+        if (!isPriceValid(backendTotal, totalAmount, 0.1)) {
+            const percentageDifference =
+                (Math.abs(backendTotal - totalAmount) / backendTotal) * 100;
+            console.log('Price mismatch detected');
+            console.log('BACKEND CALCULATION:', backendTotal);
+            console.log('FRONTEND SUBMITTED:', totalAmount);
+            console.log('PERCENTAGE DIFFERENCE:', percentageDifference.toFixed(4) + '%');
+
+            return res.status(400).json({
+                success: false,
+                message: 'Price verification failed',
+                debug: {
+                    backendCalculation: backendTotal,
+                    frontendSubmitted: totalAmount,
+                    difference: Math.abs(backendTotal - totalAmount),
+                    percentageDifference: percentageDifference.toFixed(4) + '%',
+                },
+            });
+        }
+
+        // Create order if prices match
+        const newOrder = await Order.create({
+            user: user,
+            userName: userFound.FullName,
+            userEmail: userFound.Email,
+            items: [
+                {
+                    product: items[0].product,
+                    title: productFound.title,
+                    images: productFound.images,
+                    quantity: frontendQuantity,
+                    price: productPrice,
+                    weight: frontendWeightPerUnit,
+                    totalWeight: totalWeight,
+                },
+            ],
+            phoneNumber: phoneNumber,
+            totalAmount: totalAmount,
+            shippingAddress: shippingAddress,
+            shippingMethod: shipThrough,
+            shippingCost: shippingCost,
+            productTotal: backendProductTotal,
+            paymentStatus: 'Pending',
+            expectedDelivery: expectedDelivery,
+        });
+
+        // Update payment status if already approved
+        if (paypalOid) {
             const paymentStatus = await getPaymentStatus(paypalOid);
             if (paymentStatus === 'APPROVED') {
-                newOrder.paymentStatus === 'Success';
-
+                newOrder.paymentStatus = 'Success'; // Fixed: was using === instead of =
+                await newOrder.save(); // Save the updated payment status
             }
-            
-            const orderData = {
-                orderNumber: `#SVAH${Date.now()}`,
-                orderDate: new Date().toLocaleDateString(),
-                totalAmount: totalAmount.toLocaleString(),
-                paymentStatus: newOrder.paymentStatus === 'Success' ? 'Paid' : 'Pending',
-                items: [
-                    {   
-                        icon: "🌿",
-                        name: productFound.title,
-                        description: `${frontendWeight}kg • Premium Quality`,
-                        price: (productPrice * frontendQuantity * frontendWeight).toLocaleString(),
-                        quantity: frontendQuantity.toString()
-                    }
-                ],
-                deliveryAddress: shippingAddress.replace(/,/g, '<br/>'),
-                expectedDelivery: new Date(expectedDelivery).toLocaleDateString()
-            };
-
-            await orderConfirmationEmail(
-                userFound.FullName,
-                userFound.Email,
-                "Order Confirmation - Shree Venkateswara Agros and Herbs",
-                orderData
-            );
-            
-
-            return res.status(200).json({ success: true, message: 'Order Placed Successfully!' });
-        } else {
-            console.log('Price mismatch deteced');
-            console.log('BACKEND PRICE', backendTotal);
-            console.log('FRONTEND PRICE', totalAmount);
-            return res.status(500).json({ success: false });
         }
+
+        // Prepare order confirmation email
+        const orderData = {
+            orderNumber: `#SVAH${Date.now()}`,
+            orderDate: new Date().toLocaleDateString(),
+            totalAmount: totalAmount.toLocaleString(),
+            paymentStatus: newOrder.paymentStatus === 'Success' ? 'Paid' : 'Pending',
+            items: [
+                {
+                    icon: '🌿',
+                    name: productFound.title,
+                    description: `${totalWeight}kg • Premium Quality`,
+                    price: backendProductTotal.toLocaleString(),
+                    quantity: frontendQuantity.toString(),
+                },
+            ],
+            deliveryAddress: shippingAddress.replace(/,/g, '<br/>'),
+            expectedDelivery: new Date(expectedDelivery).toLocaleDateString(),
+            shippingMethod: shipThrough === 'air' ? 'Air Shipping' : 'Sea Shipping',
+        };
+
+        // // Send confirmation email
+        // await orderConfirmationEmail(
+        //     userFound.FullName,
+        //     userFound.Email,
+        //     'Order Confirmation - Shree Venkateswara Agros and Herbs',
+        //     orderData,
+        // );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Order Placed Successfully!',
+            orderId: newOrder._id,
+        });
     } catch (error) {
+        console.error('Order creation error:', error);
         return res.status(500).json({
             success: false,
-            error,
-            message: error.message,
+            message: error.message || 'Internal Server Error',
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
         });
     }
 };
-
 
 export const getAddress = async (req, res) => {
     const { orderId } = req.params;
@@ -228,16 +300,15 @@ export const generateFeatureProducts = async (req, res) => {
     }
 };
 
-export const getAllOrder = async (req,res) => {
+export const getAllOrder = async (req, res) => {
     try {
         const orders = await Order.find();
-        res.status(200).json({ msg : "all order fetched" , orders})
+        res.status(200).json({ msg: 'all order fetched', orders });
     } catch (error) {
-        console.log(error)
-        res.status(402).json({ msg: "error in fetching product" , error})
+        console.log(error);
+        res.status(402).json({ msg: 'error in fetching product', error });
     }
-}
-
+};
 
 export const updateOrderStatus = async (req, res) => {
     const { orderId } = req.params;
@@ -248,7 +319,7 @@ export const updateOrderStatus = async (req, res) => {
     if (!validStatuses.includes(status)) {
         return res.status(400).json({
             success: false,
-            message: "Invalid status value provided.",
+            message: 'Invalid status value provided.',
         });
     }
 
@@ -258,7 +329,7 @@ export const updateOrderStatus = async (req, res) => {
         if (!order) {
             return res.status(404).json({
                 success: false,
-                message: "Order not found",
+                message: 'Order not found',
             });
         }
 
@@ -271,10 +342,10 @@ export const updateOrderStatus = async (req, res) => {
             order,
         });
     } catch (error) {
-        console.error("Error updating order status:", error);
+        console.error('Error updating order status:', error);
         return res.status(500).json({
             success: false,
-            message: "Something went wrong while updating status",
+            message: 'Something went wrong while updating status',
             error: error.message,
         });
     }
