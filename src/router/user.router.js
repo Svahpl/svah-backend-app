@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
     Signup,
+    getAdmin,
     getAllUser,
     deleteUser,
     EmailByAdmin,
@@ -22,6 +23,7 @@ userRouter.route('/deleteuser/:id').delete(AdminVerify, deleteUser);
 userRouter.route('/send-Email').post(AdminVerify, EmailByAdmin);
 userRouter.route('/user/:userId').get(getUser);
 userRouter.route('/map/clerk/:clerkId').get(getUserByClerkId);
+userRouter.route("/admin").get(AdminVerify , getAdmin)
 
 // admin signup and login part
 
