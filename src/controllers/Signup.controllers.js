@@ -58,7 +58,7 @@ export const getAllUser = async (req, res) => {
 
 export const getUser = async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId)
+        const user = await User.findById(req.params.userId)
         console.log(user);
         if (!user) {
             return res.status(400).json({ msg: "User not found" });
