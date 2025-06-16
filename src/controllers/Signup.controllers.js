@@ -60,7 +60,7 @@ export const getAllUser = async (req, res) => {
     }
 };
 
-export const getUser = async (req, res) => {
+export const getAdmin = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId)
         console.log(user);

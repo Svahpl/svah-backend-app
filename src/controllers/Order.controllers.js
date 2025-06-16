@@ -262,7 +262,7 @@ export const updateOrderStatus = async (req, res) => {
             });
         }
 
-        order.paymentStatus = status; // Or use order.status if you store a separate field
+        order.orderStatus = status; 
         await order.save();
 
         return res.status(200).json({
