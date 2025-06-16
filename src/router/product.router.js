@@ -17,7 +17,7 @@ export const productRouter = new Router();
 productRouter.route("/add").post(AdminVerify,
     upload.array("images", 5),
     productController
-  );
+);
 
 productRouter.get('/get-product/:id',getProductById)
 
