@@ -25,8 +25,8 @@ const port = process.env.PORT;
 // ========================== CORS Setup =========================== //
 
 const corsOptions = {
-    origin: ['https://www.svahpl.com', 'https://admin-svah.vercel.app'],
-    // origin : "*",
+    // origin: ['https://www.svahpl.com', 'https://admin-svah.vercel.app'],
+     origin : "*",
     credentials: true,
     methods: 'GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS',
     allowedHeaders: [
