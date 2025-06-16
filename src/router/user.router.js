@@ -6,8 +6,9 @@ import {
     EmailByAdmin,
     getUser,
     getUserByClerkId,
-    storeAddress,
     getUserAddress,
+    updateUserAddress,
+    addNewAddress,
     deleteAddress,
 } from '../controllers/Signup.controllers.js';
 import { signup, login } from '../controllers/Admin.controllers.js';
@@ -21,9 +22,6 @@ userRouter.route('/deleteuser/:id').delete(AdminVerify, deleteUser);
 userRouter.route('/send-Email').post(AdminVerify, EmailByAdmin);
 userRouter.route('/user/:userId').get(getUser);
 userRouter.route('/map/clerk/:clerkId').get(getUserByClerkId);
-userRouter.route('/add/address').post(storeAddress);
-userRouter.route('/get-user-address/:userId').get(getUserAddress);
-userRouter.route('/delete/address/:addressId').delete(deleteAddress);
 
 // admin signup and login part
 
@@ -32,3 +30,9 @@ userRouter.route('/login').post(login);
 userRouter.post('/otp-for-password', passwordOtp);
 userRouter.post('/verify-email', verifyEmail);
 userRouter.post('/reset-password', resetPassword);
+
+// Address Routers
+userRouter.route('/get-user-address/:userId').get(getUserAddress);
+userRouter.route('/update-address/:userId').post(updateUserAddress);
+userRouter.route('/add-new-address/:userId').post(addNewAddress);
+userRouter.route('/delete-user-address/:userId/:addressId').delete(deleteAddress);

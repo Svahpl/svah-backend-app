@@ -139,107 +139,6 @@ export const getUserByClerkId = async (req, res) => {
     }
 };
 
-export const storeAddress = async (req, res) => {
-    const {
-        userId,
-        addressLine1,
-        addressLine2,
-        city,
-        state,
-        country,
-        pinCode,
-        addressId,
-        phoneNumber,
-    } = req.body;
-
-    try {
-        // Validate required fields (added country to required fields)
-        if (!userId || !addressLine1 || !city || !state || !country || !phoneNumber) {
-            return res.status(400).json({
-                message:
-                    'Incomplete Fields. Address Line 1, City, State, Country and Phone Number are required.',
-            });
-        }
-
-        // Find the user
-        const userFound = await User.findById(userId);
-        if (!userFound) {
-            return res.status(404).json({ message: 'No user Found' });
-        }
-
-        // Create address object (added country field)
-        const addressData = {
-            addressLine1,
-            addressLine2: addressLine2 || '',
-            city,
-            state,
-            country,
-            pinCode: pinCode || '',
-            phoneNumber: phoneNumber || '',
-        };
-
-        // Check if this is an update (addressId provided) or new address
-        if (addressId) {
-            // Update existing address
-            const addressIndex = userFound.address.findIndex(
-                addr => addr._id.toString() === addressId,
-            );
-
-            if (addressIndex === -1) {
-                return res.status(404).json({ message: 'Address not found' });
-            }
-
-            // Update the address (including country)
-            userFound.address[addressIndex] = {
-                ...userFound.address[addressIndex]._doc,
-                ...addressData,
-            };
-        } else {
-            // Add new address (including country)
-            userFound.address.push(addressData);
-        }
-
-        // Save the user
-        await userFound.save();
-
-        return res.status(200).json({
-            success: true,
-            message: addressId ? 'Address updated successfully!' : 'Address added successfully!',
-            address: userFound.address,
-        });
-    } catch (error) {
-        console.log('Error in storeAddress:', error);
-        return res.status(500).json({ error: error.message || 'Internal server error' });
-    }
-};
-
-// Delete address controller remains the same as it doesn't need modification for country field
-export const deleteAddress = async (req, res) => {
-    const { addressId } = req.params;
-    const { userId } = req.body; // or get from auth middleware
-
-    try {
-        const userFound = await User.findById(userId);
-        if (!userFound) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Remove address from array
-        userFound.address = userFound.address.filter(addr => addr._id.toString() !== addressId);
-
-        await userFound.save();
-
-        return res.status(200).json({
-            success: true,
-            message: 'Address deleted successfully!',
-            address: userFound.address,
-        });
-    } catch (error) {
-        console.log('Error in deleteAddress:', error);
-        return res.status(500).json({ error: error.message || 'Internal server error' });
-    }
-};
-
 export const getUserAddress = async (req, res) => {
     const { userId } = req.params;
     try {
@@ -252,5 +151,69 @@ export const getUserAddress = async (req, res) => {
         return res.status(200).json({ address: addressFound });
     } catch (error) {
         console.log(`Error getting User's address: ${error}`);
+    }
+};
+
+export const updateUserAddress = async (req, res) => {
+    const { userId } = req.params;
+    const { addressId, newAddress } = req.body;
+    if (!userId || !addressId || !newAddress)
+        return res
+            .status(400)
+            .json({ message: 'Both User and address ID is required OR new Address Missing!' });
+    try {
+        const userFound = await User.findById(userId);
+        if (Array.isArray(userFound.address)) {
+            const matchedAddress = userFound.address.find(
+                addr => addr._id.toString() === addressId.toString(),
+            );
+            matchedAddress.addressLine1 = newAddress.addressLine1;
+            matchedAddress.addressLine2 = newAddress.addressLine2;
+            matchedAddress.city = newAddress.city;
+            matchedAddress.state = newAddress.state;
+            matchedAddress.country = newAddress.country;
+            matchedAddress.pinCode = newAddress.pinCode;
+            matchedAddress.phone = newAddress.phone;
+            await userFound.save();
+            return res.status(200).json({ updatedAddress: matchedAddress });
+        } else {
+            throw new Error('Address is undefined or not an array');
+        }
+        return;
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({});
+    }
+};
+
+export const addNewAddress = async (req, res) => {
+    const { userId } = req.params;
+    const { newAddress } = req.body;
+    try {
+        const userFound = await User.findById(userId);
+        userFound.address.push(newAddress);
+        await userFound.save();
+        return res.status(200).json({ success: true, message: 'Address Added Successfully' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export const deleteAddress = async (req, res) => {
+    const { userId, addressId } = req.params;
+
+    try {
+        const result = await User.updateOne(
+            { _id: userId },
+            { $pull: { address: { _id: addressId } } },
+        );
+
+        if (result.modifiedCount === 0) {
+            return res.status(404).json({ message: 'Address not found or already deleted' });
+        }
+
+        return res.status(200).json({ message: 'Address deleted successfully' });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
     }
 };

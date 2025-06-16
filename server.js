@@ -11,13 +11,12 @@ import { productRouter } from './src/router/product.router.js';
 import { webhookRouter } from './src/router/webhook.router.js';
 import paypalRouter from './src/router/paypal.router.js';
 import { User } from './src/models/user.models.js';
-import {OrderRouter} from "./src/router/order.router.js"
+import { OrderRouter } from './src/router/order.router.js';
 import { CartRouter } from './src/router/cart.router.js';
 import { WishlistRouter } from './src/router/whishlist.router.js';
 
 // import Razorpay from 'razorpay';
 // import { razorPayRouter } from './src/router/razorpay.router.js';
-
 
 dotenv.config();
 const app = express();
@@ -26,7 +25,7 @@ const port = process.env.PORT;
 // ========================== CORS Setup =========================== //
 
 const corsOptions = {
-    origin: ["https://www.svahpl.com","https://admin-svah.vercel.app"],
+    origin: ['https://www.svahpl.com', 'https://admin-svah.vercel.app'],
     // origin : "*",
     credentials: true,
     methods: 'GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS',
@@ -45,7 +44,7 @@ const corsOptions = {
 // ====== Development CORS Options ======= //
 
 const devCorsOptions = {
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173','http://localhost:5174'],
     credentials: true,
     methods: 'GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS',
     allowedHeaders: [
@@ -83,19 +82,17 @@ app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 //     key_secret: process.env.RAZORPAY_KEY_SECRET,
 // });
 
-
-
-
 app.get('/', (req, res) => {
     return res.send(`This is Svah's Backend Server!`);
 });
 
 app.use('/api/auth', userRouter);
+app.use('/api/user', userRouter);
 app.use('/api/product', productRouter);
 app.use('/api/paypal', paypalRouter);
-app.use('/api/order' , OrderRouter)
-app.use("/api/cart" , CartRouter)
-app.use("/api/wishlist" , WishlistRouter)
+app.use('/api/order', OrderRouter);
+app.use('/api/cart', CartRouter);
+app.use('/api/wishlist', WishlistRouter);
 // app.use('/api/razorpay', razorPayRouter)
 
 app.get('/api/protected', ClerkExpressRequireAuth(), async (req, res) => {

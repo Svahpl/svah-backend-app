@@ -68,6 +68,7 @@ const UserSchema = new mongoose.Schema(
                 state: { type: String },
                 country: { type: String },
                 pinCode: { type: String },
+                phone: { type: String },
             },
         ],
         isGuest: {
