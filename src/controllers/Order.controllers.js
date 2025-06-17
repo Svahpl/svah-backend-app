@@ -236,13 +236,13 @@ export const createOrder = async (req, res) => {
             shippingMethod: shipThrough === 'air' ? 'Air Shipping' : 'Sea Shipping',
         };
 
-        // // Send confirmation email
-        // await orderConfirmationEmail(
-        //     userFound.FullName,
-        //     userFound.Email,
-        //     'Order Confirmation - Shree Venkateswara Agros and Herbs',
-        //     orderData,
-        // );
+        // Send confirmation email
+        await orderConfirmationEmail(
+            userFound.FullName,
+            userFound.Email,
+            'Order Confirmation - Shree Venkateswara Agros and Herbs',
+            orderData,
+        );
 
         return res.status(200).json({
             success: true,
