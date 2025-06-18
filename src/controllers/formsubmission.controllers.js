@@ -91,7 +91,7 @@ export const SalseMessegeSubmit = async (req, res) => {
 export const getrequirement = async(req,res) => {
     try {
         const requirements = await FormSubmission.find();
-        res.status(400).json({ msg: "form data fetched", requirements })
+        res.status(200).json({ msg: "form data fetched", requirements })
     } catch (error) {
         console.log(error)
         res.status(400).json({ msg : "somthing went wrong to fetch data of form" , error})
@@ -102,7 +102,7 @@ export const getrequirement = async(req,res) => {
 export const getsalse = async (req, res) => {
     try {
         const salse = await salseSubmission.find();
-        res.status(400).json({ msg: "form data fetched",salse})
+        res.status(200).json({ msg: "form data fetched",salse})
     } catch (error) {
         console.log(error)
         res.status(400).json({ msg: "somthing went wrong to fetch data of form", error })
