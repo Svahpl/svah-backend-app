@@ -55,6 +55,9 @@ const UserSchema = new mongoose.Schema(
                     type: Number,
                     default: 1,
                 },
+                weight: {
+                    type: Number,
+                },
             },
         ],
         phoneNumber: {
