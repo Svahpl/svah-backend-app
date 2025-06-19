@@ -207,7 +207,7 @@ export const createOrder = async (req, res) => {
             phoneNumber: phoneNumber,
             totalAmount: totalAmount,
             shippingAddress: shippingAddress,
-            shippingMethod: shipThrough,
+            shipThrough: shipThrough,
             shippingCost: shippingCost,
             productTotal: backendProductTotal,
             paymentStatus: 'Pending',
