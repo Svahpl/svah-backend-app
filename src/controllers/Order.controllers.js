@@ -5,6 +5,8 @@ import axios from 'axios';
 import got from 'got';
 import orderConfirmationEmail from '../services/OrderConform.js';
 
+// GET Dollar in Indian Rupees
+
 const getCurrentDollarinInr = async () => {
     try {
         const res = await axios.get(`https://open.er-api.com/v6/latest/USD`);
@@ -14,6 +16,8 @@ const getCurrentDollarinInr = async () => {
         console.log(error);
     }
 };
+
+// GET Paypal Access token
 
 const getAccessToken = async (req, res) => {
     try {
@@ -32,6 +36,8 @@ const getAccessToken = async (req, res) => {
         throw new Error(error);
     }
 };
+
+// GET Paypal Payment Status
 
 const getPaymentStatus = async orderId => {
     const accessToken = await getAccessToken();
@@ -60,7 +66,8 @@ export const getOrders = async (req, res) => {
     }
 };
 
-// Helper function for price validation
+// FUNCTION for price validation & comparison
+
 const isPriceValid = (backendTotal, frontendTotal, tolerancePercent = 0.1) => {
     const percentageDifference = (Math.abs(backendTotal - frontendTotal) / backendTotal) * 100;
     return percentageDifference <= tolerancePercent;

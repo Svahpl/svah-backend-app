@@ -1,6 +1,10 @@
 import { User } from '../models/user.models.js';
 import { Product } from '../models/product.models.js';
+import { Order } from '../models/order.models.js';
 import mongoose from 'mongoose';
+import orderConfirmationEmail from '../services/OrderConform.js';
+import axios from 'axios';
+import got from 'got';
 
 export const addCart = async (req, res) => {
     const { userId, productId, quantity, weight } = req.body;
@@ -258,5 +262,268 @@ export const updateCartItemQuantity = async (req, res) => {
     } catch (error) {
         console.log(`Error updating cart item quantity: ${error}`);
         return res.status(500).json({ success: false, error });
+    }
+};
+
+// GET Dollar in Indian Rupees
+
+const getCurrentDollarinInr = async () => {
+    try {
+        const res = await axios.get(`https://open.er-api.com/v6/latest/USD`);
+        const inr = res.data.rates.INR;
+        return inr;
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+// GET Paypal Access token
+
+const getAccessToken = async (req, res) => {
+    try {
+        const response = await got.post(`${process.env.PAYPAL_BASEURL}/v1/oauth2/token`, {
+            form: {
+                grant_type: 'client_credentials',
+            },
+            username: process.env.PAYPAL_CLIENT_ID,
+            password: process.env.PAYPAL_SECRET,
+        });
+        const data = JSON.parse(response.body);
+        const newAccessToken = data.access_token;
+        return newAccessToken;
+    } catch (error) {
+        console.log(error);
+        throw new Error(error);
+    }
+};
+
+// GET Paypal Payment Status
+
+const getPaymentStatus = async orderId => {
+    const accessToken = await getAccessToken();
+    try {
+        const res = await axios.get(`${process.env.PAYPAL_BASEURL}/v2/checkout/orders/${orderId}`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+        console.log('----- PAYMENT STATUS RESPONSE ----', res.data.status);
+        return res.data.status;
+    } catch (error) {
+        console.log(`Error during fetching Payment Status: ${error}`);
+    }
+};
+
+// FUNCTION for price validation & comparison
+
+const isPriceValid = (backendTotal, frontendTotal, tolerancePercent = 0.1) => {
+    const percentageDifference = (Math.abs(backendTotal - frontendTotal) / backendTotal) * 100;
+    return percentageDifference <= tolerancePercent;
+};
+
+export const createCartOrder = async (req, res) => {
+    const {
+        user,
+        phoneNumber,
+        shippingAddress,
+        totalAmount,
+        shipThrough,
+        items,
+        expectedDelivery,
+        paypalOid,
+    } = req.body;
+
+    try {
+        // Validate required fields
+        if (
+            !user ||
+            !phoneNumber ||
+            !shippingAddress ||
+            !totalAmount ||
+            !shipThrough ||
+            !items ||
+            !expectedDelivery
+        ) {
+            console.log(
+                'Missing fields:' +
+                    (!user ? ' user' : '') +
+                    (!phoneNumber ? ' phoneNumber' : '') +
+                    (!shippingAddress ? ' shippingAddress' : '') +
+                    (!totalAmount ? ' totalAmount' : '') +
+                    (!shipThrough ? ' shipThrough' : '') +
+                    (!items ? ' items' : '') +
+                    (!expectedDelivery ? ' expectedDelivery' : ''),
+            );
+            return res.status(400).json({
+                success: false,
+                message: 'All fields are required!',
+            });
+        }
+
+        const userFound = await User.findById(user);
+        if (!userFound) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+            });
+        }
+
+        const productPrices = items.map(item => item.price);
+        const productTotalPrice = productPrices.reduce((sum, p) => sum + p, 0);
+        const quantityArray = items.map(item => item.quantity);
+        const weightArray = items.map(item => item.weight);
+
+        const individualItemTotalWeight = items.map(item => item.weight * item.quantity);
+        const totalWeight = individualItemTotalWeight.reduce((sum, weight) => sum + weight, 0);
+        console.log('Debug Product Prices', productPrices);
+        console.log('Debug Quantities qty', quantityArray);
+        console.log('Debug Frontend Weight/unit', weightArray);
+        console.log('Debug total weight', individualItemTotalWeight);
+
+        let backendProductTotal = 0;
+
+        for (let i = 0; i < items.length; i++) {
+            backendProductTotal += productPrices[i] * individualItemTotalWeight[i];
+        }
+
+        console.log('Debug backend product total', backendProductTotal);
+
+        // GET current USD in INR
+        let dollar = await getCurrentDollarinInr();
+        console.log('Debug Dollar Rate', dollar);
+
+        // CALCULATE shipping code based on total weight
+        let shippingCost;
+        if (shipThrough === 'air') {
+            shippingCost = totalWeight * (1000 / dollar);
+        } else if (shipThrough === 'ship') {
+            shippingCost = totalWeight * (700 / dollar);
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: 'INVALID Shipping Method',
+            });
+        }
+
+        console.log('Debug Shipping Cost', shippingCost);
+
+        const backendTotal = backendProductTotal + shippingCost;
+
+        console.log('Debug Backend Total', backendTotal);
+        console.log('Debug Frontend Total', totalAmount);
+
+        // USE percentage-based price validation with 0.1% tolerance
+        if (!isPriceValid(backendTotal, totalAmount, 0.1)) {
+            const percentageDifference =
+                (Math.abs(backendTotal - totalAmount) / backendTotal) * 100;
+
+            console.log('PRICE Mismatch Detected');
+            console.log('BACKEND Calculation', backendTotal);
+            console.log('FRONTEND Submitted', totalAmount);
+            console.log('PERCENTAGE Difference', percentageDifference);
+
+            return res.status(400).json({
+                success: false,
+                message: 'Price verification failed',
+                debug: {
+                    backendCalculation: backendTotal,
+                    frontendSubmitted: totalAmount,
+                    difference: Math.abs(backendTotal - totalAmount),
+                    percentageDifference: percentageDifference.toFixed(4) + '%',
+                },
+            });
+        }
+
+        // REFACTOR ITEMS ARRAY TO PASS IN ORDER DOCUMENT
+
+        const reformattedItems = items.map(item => {
+            const frontendQuantity = item.quantity;
+            const productPrice = item.price;
+            const frontendWeightPerUnit = item.weight;
+            const totalWeight = frontendQuantity * frontendWeightPerUnit;
+
+            return {
+                product: item._id,
+                title: item.title,
+                images: item.images,
+                quantity: frontendQuantity,
+                price: productPrice,
+                weight: frontendWeightPerUnit,
+                totalWeight: totalWeight,
+            };
+        });
+
+        // CREATE Order if price matches
+
+        const newOrder = await Order.create({
+            user: user,
+            userName: userFound.FullName,
+            userEmail: userFound.Email,
+            items: reformattedItems,
+            phoneNumber: phoneNumber,
+            totalAmount: totalAmount,
+            shippingAddress: shippingAddress,
+            shippingMethod: shipThrough,
+            shippingCost: shippingCost,
+            productTotal: backendProductTotal,
+            paymentStatus: 'Pending',
+            expectedDelivery: expectedDelivery,
+        });
+
+        // UPDATE Payment Status if already Approved
+        if (paypalOid) {
+            const paymentStatus = await getPaymentStatus(paypalOid);
+            if (paymentStatus === 'APPROVED') {
+                newOrder.paymentStatus = 'Success';
+                await newOrder.save();
+            }
+        }
+
+        // REFACTOR ITEMS ARRAY TO PASS IN EMAIL
+
+        const displayItems = items.map(item => {
+            const frontendQuantity = item.quantity;
+            const productPrice = item.price;
+            const frontendWeightPerUnit = item.weight;
+            const totalWeight = frontendQuantity * frontendWeightPerUnit;
+            const backendProductTotal = productPrice * totalWeight;
+
+            return {
+                icon: '🌿',
+                name: item.title,
+                description: `${totalWeight}kg • Premium Quality`,
+                price: backendProductTotal.toLocaleString(), // formatted with commas
+                quantity: frontendQuantity.toString(), // ensure it's a string
+            };
+        });
+
+        // PREPARE Order Confirmation email
+
+        const orderData = {
+            orderNumber: `#SVAH${Date.now()}`,
+            orderDate: new Date().toLocaleDateString(),
+            totalAmount: totalAmount.toLocaleString(),
+            paymentStatus: newOrder.paymentStatus === 'Success' ? 'Paid' : 'Pending',
+            items: displayItems,
+            deliveryAddress: shippingAddress.replace(/,/g, '<br/>'),
+            expectedDelivery: new Date(expectedDelivery).toLocaleDateString(),
+            shippingMethod: shipThrough === 'air' ? 'Air Shipping' : 'Sea Shipping',
+        };
+
+        // Send confirmation email
+        await orderConfirmationEmail(
+            userFound.FullName,
+            userFound.Email,
+            'Order Confirmation - Shree Venkateswara Agros and Herbs',
+            orderData,
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Order Placed Successfully!',
+            orderId: newOrder._id,
+        });
+    } catch (error) {
+        return res.status(500).json({ error, success: false, message: 'Error from cart order controller' });
     }
 };
