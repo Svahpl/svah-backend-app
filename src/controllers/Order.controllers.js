@@ -207,7 +207,7 @@ export const createOrder = async (req, res) => {
             phoneNumber: phoneNumber,
             totalAmount: totalAmount,
             shippingAddress: shippingAddress,
-            shippingMethod: shipThrough,
+            shippingMethod: shipThrough === 'air' ? 'airline' : 'ship',
             shippingCost: shippingCost,
             productTotal: backendProductTotal,
             paymentStatus: 'Pending',
@@ -340,7 +340,7 @@ export const updateOrderStatus = async (req, res) => {
             });
         }
 
-        order.orderStatus = status; 
+        order.orderStatus = status;
         await order.save();
 
         return res.status(200).json({

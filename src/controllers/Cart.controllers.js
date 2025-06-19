@@ -463,7 +463,7 @@ export const createCartOrder = async (req, res) => {
             phoneNumber: phoneNumber,
             totalAmount: totalAmount,
             shippingAddress: shippingAddress,
-            shippingMethod: shipThrough,
+            shippingMethod: shipThrough === 'air' ? 'airline' : 'ship',
             shippingCost: shippingCost,
             productTotal: backendProductTotal,
             paymentStatus: 'Pending',
@@ -524,6 +524,9 @@ export const createCartOrder = async (req, res) => {
             orderId: newOrder._id,
         });
     } catch (error) {
-        return res.status(500).json({ error, success: false, message: 'Error from cart order controller' });
+        console.log(error);
+        return res
+            .status(500)
+            .json({ error, success: false, message: 'Error from cart order controller' });
     }
 };
