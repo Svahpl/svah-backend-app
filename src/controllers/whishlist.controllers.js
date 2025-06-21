@@ -1,6 +1,8 @@
 
+
 import { User } from "../models/user.models.js";
 import { Product } from "../models/product.models.js";
+import mongoose from "mongoose";
 
 export const addItemToWishList = async (req, res) => {
     const { userId, productId } = req.params;
@@ -21,7 +23,7 @@ export const addItemToWishList = async (req, res) => {
 
         // 3. Check if product is already in wishlist
         const alreadyInWishlist = user.wishlist?.some(
-            (item) => item.toString() === productId
+            (item) => item.productId.toString() === productId
         );
 
         if (alreadyInWishlist) {
@@ -108,5 +110,60 @@ export const getWishListItem = async (req, res) => {
     } catch (error) {
         console.error("Error loading wishlist items:", error);
         return res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+};
+
+export const moveWishlistToCart = async (req, res) => {
+    try {
+        const { userId, productId } = req.body;
+
+        // Validate required fields
+        if (!userId || !productId) {
+            return res.status(403).json({ msg: "userId and productId are required" });
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+
+        // Check if product is in wishlist
+        const isInWishlist = user.wishlist.some(
+            item => item.productId.toString() === productId
+        );
+
+        if (!isInWishlist) {
+            return res.status(404).json({ msg: "Product not found in wishlist" });
+        }
+
+        // Check if product is already in cart
+        const isInCart = user.cart.some(
+            item => item.productId.toString() === productId
+        );
+
+        if (!isInCart) {
+            user.cart.push({
+                productId: new mongoose.Types.ObjectId(productId),
+                quantity: 1,
+            });
+        }
+
+        // Remove from wishlist
+        user.wishlist = user.wishlist.filter(
+            item => item.productId.toString() !== productId
+        );
+
+        await user.save();
+
+        return res.status(200).json({
+            msg: "Product moved from wishlist to cart",
+            cart: user.cart,
+            wishlist: user.wishlist,
+        });
+
+    } catch (error) {
+        console.error("Error moving wishlist item to cart:", error);
+        return res.status(500).json({ msg: "Server error", error });
     }
 };
