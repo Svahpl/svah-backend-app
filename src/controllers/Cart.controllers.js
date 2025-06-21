@@ -495,6 +495,10 @@ export const createCartOrder = async (req, res) => {
             }
         }
 
+        // DELETE ITEMS from cart of User.
+        userFound.cart = [];
+        await userFound.save();
+
         // REFACTOR ITEMS ARRAY TO PASS IN EMAIL
 
         const displayItems = items.map(item => {
