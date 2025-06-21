@@ -6,13 +6,14 @@ import salseSubmission from "../models/Salse.models.js"
 
 export const MessegeSubmit  = async (req,res) => {
     try {
-        const parsed = formSchema.safeParse(req.body);
+            const parsed = formSchema.safeParse(req.body);
 
-        if (!parsed.success) {
-            return res.status(400).json({
-                message: parsed.error.errors[0].message,
-            });
-        }
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: parsed.error.errors[0].message,
+      });
+    }
+
         const {
             fullName,
             companyName,
