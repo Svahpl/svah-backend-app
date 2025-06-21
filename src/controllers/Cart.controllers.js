@@ -9,6 +9,15 @@ import got from 'got';
 export const addCart = async (req, res) => {
     const { userId, productId, quantity, weight } = req.body;
 
+    // ✅ Check for required fields
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ success: false, message: 'Invalid or missing userId' });
+    }
+
+    if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+        return res.status(400).json({ success: false, message: 'Invalid or missing productId' });
+    }
+
     try {
         const productToAdd = await Product.findById(productId);
         if (!productToAdd) {
@@ -26,16 +35,13 @@ export const addCart = async (req, res) => {
             });
         }
 
-        // Check if the product with the same weight already exists in the cart
         const existingCartItemIndex = user.cart.findIndex(
             item => item.productId.toString() === productId && item.weight === weight,
         );
 
         if (existingCartItemIndex !== -1) {
-            // Product with same weight exists in cart, increment quantity
             user.cart[existingCartItemIndex].quantity += quantity;
         } else {
-            // Product with this weight doesn't exist in cart, add it
             user.cart.push({
                 productId: productToAdd._id,
                 quantity,
@@ -43,7 +49,6 @@ export const addCart = async (req, res) => {
             });
         }
 
-        // Save the updated user
         await user.save();
 
         return res.status(200).json({
