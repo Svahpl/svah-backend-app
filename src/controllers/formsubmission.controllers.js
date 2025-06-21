@@ -13,6 +13,7 @@ export const MessegeSubmit  = async (req,res) => {
         message: parsed.error.errors[0].message,
       });
     }
+
         const {
             fullName,
             companyName,
@@ -88,6 +89,7 @@ export const SalseMessegeSubmit = async (req, res) => {
         res.status(400).json({ msg: "somthing went wrong ", error })
     }
 }
+
 export const getrequirement = async(req,res) => {
     try {
         const requirements = await FormSubmission.find();

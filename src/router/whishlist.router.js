@@ -7,3 +7,4 @@ WishlistRouter.route("/add-to-wishlist/:userId/:productId").post(addItemToWishLi
 WishlistRouter.route("/delete-to-wishlist/:userId/:productId").delete(deletWishListitem);
 WishlistRouter.route("/getwhishlistItem/:userId").get(getWishListItem);
 WishlistRouter.route("/movetocart").post(moveWishlistToCart)
+
