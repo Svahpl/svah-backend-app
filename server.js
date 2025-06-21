@@ -15,7 +15,7 @@ import { OrderRouter } from './src/router/order.router.js';
 import { CartRouter } from './src/router/cart.router.js';
 import { WishlistRouter } from './src/router/whishlist.router.js';
 import { formRouter } from './src/router/form.router.js';
-
+import { deliveryRouter } from './src/router/delevery.router.js';
 // import Razorpay from 'razorpay';
 // import { razorPayRouter } from './src/router/razorpay.router.js';
 
@@ -94,7 +94,8 @@ app.use('/api/paypal', paypalRouter);
 app.use('/api/order', OrderRouter);
 app.use('/api/cart', CartRouter);
 app.use('/api/wishlist', WishlistRouter);
-app.use("/api/form" ,formRouter)
+app.use("/api/form" ,formRouter);
+app.use("/api/charge", deliveryRouter);
 // app.use('/api/razorpay', razorPayRouter)
 
 app.get('/api/protected', ClerkExpressRequireAuth(), async (req, res) => {
