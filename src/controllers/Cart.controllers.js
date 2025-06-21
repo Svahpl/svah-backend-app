@@ -368,6 +368,7 @@ export const createCartOrder = async (req, res) => {
             });
         }
 
+        const productIds = items.map(item => item._id);
         const productPrices = items.map(item => item.price);
         const productTotalPrice = productPrices.reduce((sum, p) => sum + p, 0);
         const quantityArray = items.map(item => item.quantity);
@@ -476,6 +477,21 @@ export const createCartOrder = async (req, res) => {
             if (paymentStatus === 'APPROVED') {
                 newOrder.paymentStatus = 'Success';
                 await newOrder.save();
+            }
+        }
+
+        // REDUCE Product Stock Quantity
+        for (let item of items) {
+            const productFound = await Product.findById(item._id);
+            if (productFound) {
+                const availableQty = productFound.quantity - item.quantity;
+
+                // Prevent negative stock
+                productFound.quantity = availableQty >= 0 ? availableQty : 0;
+
+                await productFound.save();
+            } else {
+                console.warn(`Product not found for stock update: ${item._id}`);
             }
         }
 

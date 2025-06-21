@@ -223,6 +223,11 @@ export const createOrder = async (req, res) => {
             }
         }
 
+        // Reduce Product Stock Quantity
+        let availableQty = productFound.quantity - frontendQuantity;
+        productFound.quantity = availableQty;
+        await productFound.save();
+
         // Prepare order confirmation email
         const orderData = {
             orderNumber: `#SVAH${Date.now()}`,
