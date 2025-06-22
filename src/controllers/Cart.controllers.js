@@ -412,7 +412,7 @@ export const createCartOrder = async (req, res) => {
         }
 
         console.log('Debug Shipping Cost', shippingCost);
-
+        const adminEmail = "svahpl1@gmail.com"
         const backendTotal = backendProductTotal + shippingCost;
 
         console.log('Debug Backend Total', backendTotal);
@@ -539,6 +539,13 @@ export const createCartOrder = async (req, res) => {
         await orderConfirmationEmail(
             userFound.FullName,
             userFound.Email,
+            'Order Confirmation - Shree Venkateswara Agros and Herbs',
+            orderData,
+        );
+
+            await orderConfirmationEmail(
+            userFound.FullName,
+            adminEmail,
             'Order Confirmation - Shree Venkateswara Agros and Herbs',
             orderData,
         );
