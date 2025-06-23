@@ -32,7 +32,6 @@ export const updatecharge = async (req, res) => {
     }
 };
 
-
 export const getcharge = async (req,res) => {
     try {
         const delcharge = await charge.find();
