@@ -258,7 +258,7 @@ export const createOrder = async (req, res) => {
 
         await orderConfirmationEmail(
             userFound.FullName,
-            userFound.adminEmail,
+            adminEmail,
             'Order Confirmation - Shree Venkateswara Agros and Herbs',
             orderData,
         );
