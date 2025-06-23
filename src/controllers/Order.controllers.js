@@ -140,7 +140,7 @@ export const createOrder = async (req, res) => {
         console.log('debug product qty', frontendQuantity);
         console.log('debug frontend weight per unit', frontendWeightPerUnit);
         console.log('debug total weight', totalWeight);
-
+        const adminEmail = "svahpl1@gmail.com"
         const backendProductTotal = productPrice * totalWeight;
         console.log('debug backend product total', backendProductTotal);
 
@@ -252,6 +252,13 @@ export const createOrder = async (req, res) => {
         await orderConfirmationEmail(
             userFound.FullName,
             userFound.Email,
+            'Order Confirmation - Shree Venkateswara Agros and Herbs',
+            orderData,
+        );
+
+        await orderConfirmationEmail(
+            userFound.FullName,
+            userFound.adminEmail,
             'Order Confirmation - Shree Venkateswara Agros and Herbs',
             orderData,
         );

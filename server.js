@@ -16,6 +16,7 @@ import { CartRouter } from './src/router/cart.router.js';
 import { WishlistRouter } from './src/router/whishlist.router.js';
 import { formRouter } from './src/router/form.router.js';
 import { deliveryRouter } from './src/router/delevery.router.js';
+import { commentRouter } from './src/router/comment.router.js';
 // import Razorpay from 'razorpay';
 // import { razorPayRouter } from './src/router/razorpay.router.js';
 
@@ -63,7 +64,7 @@ const devCorsOptions = {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(cors(corsOptions));
+app.use(cors(devCorsOptions));
 // 
 
 // ========================== IMPORTANT: Webhook Route =========================== //
@@ -97,6 +98,7 @@ app.use('/api/cart', CartRouter);
 app.use('/api/wishlist', WishlistRouter);
 app.use("/api/form" ,formRouter);
 app.use("/api/charge", deliveryRouter);
+app.use("/api/comment", commentRouter )
 // app.use('/api/razorpay', razorPayRouter)
 
 app.get('/api/protected', ClerkExpressRequireAuth(), async (req, res) => {
