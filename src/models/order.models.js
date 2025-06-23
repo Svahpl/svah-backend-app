@@ -18,15 +18,15 @@ const orderSchema = new mongoose.Schema(
         //  rzpId: { type: String, required: false },
         items: [
             {
-                product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+                product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
                 title: String,
                 images: [String],
                 quantity: Number,
                 price: Number,
                 weight: Number,
-            }
+            },
         ],
-        
+
         phoneNumber: {
             type: String,
             required: true,
@@ -60,6 +60,16 @@ const orderSchema = new mongoose.Schema(
         expectedDelivery: {
             type: Date,
             required: false,
+        },
+        cancelled: {
+            type: Boolean,
+            default: false,
+        },
+        cancelledAt: {
+            type: Date,
+        },
+        cancelReason: {
+            type: String,
         },
     },
     { timestamps: true },

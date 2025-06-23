@@ -140,7 +140,7 @@ export const createOrder = async (req, res) => {
         console.log('debug product qty', frontendQuantity);
         console.log('debug frontend weight per unit', frontendWeightPerUnit);
         console.log('debug total weight', totalWeight);
-        const adminEmail = "svahpl1@gmail.com"
+        const adminEmail = 'svahpl1@gmail.com';
         const backendProductTotal = productPrice * totalWeight;
         console.log('debug backend product total', backendProductTotal);
 
@@ -365,6 +365,50 @@ export const updateOrderStatus = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Something went wrong while updating status',
+            error: error.message,
+        });
+    }
+};
+
+export const cancelOrder = async (req, res) => {
+    try {
+        const { orderId, userId, reason } = req.body;
+
+        if (!orderId || !userId)
+            return res.status(400).json({ message: 'orderId and userId are required' });
+
+        const order = await Order.findById(orderId);
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        if (order.user.toString() !== userId)
+            return res.status(403).json({ message: 'Unauthorized access to cancel this order' });
+
+        const now = new Date();
+        const placedTime = new Date(order.placedAt);
+        const diffInMs = now - placedTime;
+        const diffInHours = diffInMs / (1000 * 60 * 60);
+
+        if (diffInHours > 24)
+            return res
+                .status(400)
+                .json({ message: 'Cannot cancel order after 24 hours of placement' });
+
+        if (order.cancelled) return res.status(400).json({ message: 'Order already cancelled' });
+
+        order.cancelled = true;
+        order.cancelledAt = now;
+        order.orderStatus = 'Cancelled';
+        order.cancelReason = reason || 'User requested cancellation';
+        await order.save();
+
+        return res
+            .status(200)
+            .json({ success: true, message: 'Order cancelled successfully', order });
+    } catch (error) {
+        console.error('Error cancelling order:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Something went wrong while cancelling the order',
             error: error.message,
         });
     }
