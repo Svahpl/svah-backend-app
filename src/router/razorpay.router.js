@@ -1,8 +1,8 @@
 
-// import { Router } from "express";
-// import { checkout , paymentVerification } from "../controllers/razorpayPayment.controllers.js";
+import { Router } from "express";
+import { checkout , paymentVerification } from "../controllers/razorpayPayment.controllers.js";
 
-// export const razorPayRouter = new Router();
+export const razorPayRouter = new Router();
 
-// razorPayRouter.route("/checkout").post(checkout);
-// razorPayRouter.route("/payment-verification").post(paymentVerification);
+razorPayRouter.route("/checkout").post(checkout);
+razorPayRouter.route("/payment-verification").post(paymentVerification);

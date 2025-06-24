@@ -17,8 +17,8 @@ import { WishlistRouter } from './src/router/whishlist.router.js';
 import { formRouter } from './src/router/form.router.js';
 import { deliveryRouter } from './src/router/delevery.router.js';
 import { commentRouter } from './src/router/comment.router.js';
-// import Razorpay from 'razorpay';
-// import { razorPayRouter } from './src/router/razorpay.router.js';
+import Razorpay from 'razorpay';
+import { razorPayRouter } from './src/router/razorpay.router.js';
 
 dotenv.config();
 const app = express();
@@ -98,7 +98,7 @@ app.use('/api/wishlist', WishlistRouter);
 app.use('/api/form', formRouter);
 app.use('/api/charge', deliveryRouter);
 app.use('/api/comment', commentRouter);
-// app.use('/api/razorpay', razorPayRouter)
+app.use('/api/razorpay', razorPayRouter)
 
 app.get('/api/protected', ClerkExpressRequireAuth(), async (req, res) => {
     const userId = req.auth.userId;
