@@ -562,3 +562,136 @@ export const createCartOrder = async (req, res) => {
             .json({ error, success: false, message: 'Error from cart order controller' });
     }
 };
+
+export const createCartINROrder = async (req, res) => {
+    try {
+        const {
+            user,
+            phoneNumber,
+            shippingAddress,
+            items,
+            expectedDelivery,
+            razorpayOrderId,
+        } = req.body;
+
+        // Validate inputs
+        if (!user || !phoneNumber || !shippingAddress || !expectedDelivery || !items || items.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'All fields are required!',
+            });
+        }
+
+        // Fetch user
+        const userFound = await User.findById(user);
+        if (!userFound) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Calculate backend total
+        let productTotal = 0;
+        const formattedItems = [];
+
+        for (const item of items) {
+            const product = await Product.findById(item._id);
+            if (!product) {
+                return res.status(404).json({ success: false, message: `Product not found: ${item._id}` });
+            }
+
+            const quantity = item.quantity || 1;
+            const weight = item.weight || 1;
+            const totalWeight = quantity * weight;
+            const price = product.price;
+
+            const itemTotal = price * totalWeight;
+            productTotal += itemTotal;
+
+            // Format order item
+            formattedItems.push({
+                product: product._id,
+                title: product.title,
+                images: product.images,
+                quantity,
+                price,
+                weight,
+                totalWeight,
+            });
+
+            // Reduce stock
+            product.quantity = Math.max(product.quantity - quantity, 0);
+            await product.save();
+        }
+
+        const totalAmount = productTotal;
+        const paymentStatus = razorpayOrderId ? 'Success' : 'Pending';
+
+        // Create order
+        const newOrder = await Order.create({
+            user,
+            userName: userFound.FullName,
+            userEmail: userFound.Email,
+            items: formattedItems,
+            phoneNumber,
+            shippingAddress,
+            productTotal,
+            totalAmount,
+            expectedDelivery,
+            paymentStatus,
+            rzpId: razorpayOrderId,
+        });
+
+        // Clear user's cart
+        userFound.cart = [];
+        await userFound.save();
+
+        // Prepare items for email
+        const emailItems = formattedItems.map(item => ({
+            icon: '🌿',
+            name: item.title,
+            description: `${item.totalWeight}kg • Premium Quality`,
+            price: (item.price * item.totalWeight).toLocaleString(),
+            quantity: item.quantity.toString(),
+        }));
+
+        // Email payload
+        const orderData = {
+            orderNumber: `#SVAH${Date.now()}`,
+            orderDate: new Date().toLocaleDateString(),
+            totalAmount: totalAmount.toLocaleString(),
+            paymentStatus: paymentStatus === 'Success' ? 'Paid' : 'Pending',
+            items: emailItems,
+            deliveryAddress: shippingAddress.replace(/,/g, '<br/>'),
+            expectedDelivery: new Date(expectedDelivery).toLocaleDateString(),
+            shippingMethod: 'Domestic Shipping',
+        };
+
+        // Send emails
+        await orderConfirmationEmail(
+            userFound.FullName,
+            userFound.Email,
+            'Order Confirmation - Shree Venkateswara Agros and Herbs',
+            orderData
+        );
+
+        await orderConfirmationEmail(
+            userFound.FullName,
+            'svahpl1@gmail.com',
+            'Order Confirmation - Shree Venkateswara Agros and Herbs',
+            orderData
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Order Placed Successfully!',
+            orderId: newOrder._id,
+        });
+
+    } catch (error) {
+        console.error('🔥 Cart INR Order Error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Internal Server Error',
+        });
+    }
+};
+
