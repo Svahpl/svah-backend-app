@@ -58,7 +58,7 @@ export const getCommentsByProduct = async (req, res) => {
             .sort({ createdAt: -1 });
 
         if (!Comments || Comments.length === 0) {
-            return res.status(404).json({ msg: "No comments found for this product." });
+            return res.status(204).json({ msg: "No comments found for this product." });
         }
 
         return res.status(200).json({ msg: "Product comments fetched", Comments });
