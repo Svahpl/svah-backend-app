@@ -27,8 +27,7 @@ const port = process.env.PORT;
 // ========================== CORS Setup =========================== //
 
 const corsOptions = {
-     
-    origin : ["https://www.svahpl.com" , "https://admin-svah.vercel.app"],
+    origin: ['https://www.svahpl.com', 'https://admin-svah.vercel.app', 'https://www.svahpl.in'],
     credentials: true,
     methods: 'GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS',
     allowedHeaders: [
@@ -46,7 +45,7 @@ const corsOptions = {
 // ====== Development CORS Options ======= //
 
 const devCorsOptions = {
-    origin: ['http://localhost:5173','http://localhost:5174'],
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
     credentials: true,
     methods: 'GET, POST, DELETE, PATCH, HEAD, PUT, OPTIONS',
     allowedHeaders: [
@@ -65,7 +64,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(cors(corsOptions));
-// 
+//
 
 // ========================== IMPORTANT: Webhook Route =========================== //
 
@@ -96,9 +95,9 @@ app.use('/api/paypal', paypalRouter);
 app.use('/api/order', OrderRouter);
 app.use('/api/cart', CartRouter);
 app.use('/api/wishlist', WishlistRouter);
-app.use("/api/form" ,formRouter);
-app.use("/api/charge", deliveryRouter);
-app.use("/api/comment", commentRouter )
+app.use('/api/form', formRouter);
+app.use('/api/charge', deliveryRouter);
+app.use('/api/comment', commentRouter);
 // app.use('/api/razorpay', razorPayRouter)
 
 app.get('/api/protected', ClerkExpressRequireAuth(), async (req, res) => {
