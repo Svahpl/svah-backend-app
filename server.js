@@ -77,12 +77,11 @@ app.use(cookieParser());
 app.use(express.static('/tmp', { index: false }));
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
-// ========================== Razor Pay Setup =========================== //
 
-// export const instance = new Razorpay({
-//     key_id: process.env.RAZORPAY_KEY_ID,
-//     key_secret: process.env.RAZORPAY_KEY_SECRET,
-// });
+export const instance = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 app.get('/', (req, res) => {
     return res.send(`This is Svah's Backend Server!`);
