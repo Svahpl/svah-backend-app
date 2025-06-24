@@ -246,7 +246,6 @@ const orderConfirmationTemplate = (customerName, orderNumber, orderDate, totalAm
 </head>
 <body>
   <div class="header">
-    <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
     <h1>Order Confirmed!</h1>
     <p>Thank you for choosing natural wellness</p>
   </div>
