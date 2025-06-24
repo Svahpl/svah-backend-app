@@ -413,3 +413,150 @@ export const cancelOrder = async (req, res) => {
         });
     }
 };
+export const indOrder = async (req, res) => {
+    try {
+        let {
+            user,
+            phoneNumber,
+            shippingAddress,
+            items,
+            expectedDelivery,
+            razorpayOrderId,
+        } = req.body;
+
+        // 🔄 Normalize items
+        if (!Array.isArray(items)) {
+            if (typeof items === 'object' && items !== null) {
+                items = [items];
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: "Items should be an array or a valid object.",
+                });
+            }
+        }
+
+        // ✅ Validate required fields
+        if (!user || !phoneNumber || !shippingAddress || !expectedDelivery || items.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required!",
+            });
+        }
+
+        // 🔍 Fetch user
+        const userFound = await User.findById(user);
+        if (!userFound) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+            });
+        }
+
+        // 🔍 Fetch product
+        const productFound = await Product.findById(items[0].product);
+        if (!productFound) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found in DB. Might be deleted',
+            });
+        }
+
+        // 🧮 Backend calculation (no shipping cost)
+        const quantity = items[0].quantity || 1;
+        const weightPerUnit = items[0].weight || 1;
+        const totalWeight = quantity * weightPerUnit;
+        const productPrice = productFound.price;
+        const productTotal = productPrice * totalWeight;
+        const totalAmount = productTotal; 
+
+        console.log("💡 Debug: qty =", quantity);
+        console.log("💡 Debug: weight per unit =", weightPerUnit);
+        console.log("💡 Debug: product price (from DB) =", productPrice);
+        console.log("💡 Debug: total weight =", totalWeight);
+        console.log("💡 Debug: productTotal =", productTotal);
+
+
+        // ✅ Set payment status
+        let paymentStatus = 'Pending';
+        if (razorpayOrderId) {
+                paymentStatus = 'Success';
+        }
+
+        // ✅ Create order
+        const order = await Order.create({
+            user,
+            userName: userFound.FullName,
+            userEmail: userFound.Email,
+            items: [
+                {
+                    product: items[0].product,
+                    title: productFound.title,
+                    images: productFound.images,
+                    quantity,
+                    price: productPrice,
+                    weight: weightPerUnit,
+                    totalWeight,
+                },
+            ],
+            phoneNumber,
+            shippingAddress,
+            productTotal,
+            totalAmount,
+            paymentStatus,
+            expectedDelivery,
+            rzpId: razorpayOrderId,
+        });
+
+        // 🧾 Reduce stock
+        productFound.quantity -= quantity;
+        await productFound.save();
+
+        // 📧 Email confirmation
+        const orderData = {
+            orderNumber: `#SVAH${Date.now()}`,
+            orderDate: new Date().toLocaleDateString(),
+            totalAmount: totalAmount.toLocaleString(),
+            paymentStatus: paymentStatus === 'Success' ? 'Paid' : 'Pending',
+            items: [
+                {
+                    icon: '🌿',
+                    name: productFound.title,
+                    description: `${totalWeight}kg • Premium Quality`,
+                    price: productTotal.toLocaleString(),
+                    quantity: quantity.toString(),
+                },
+            ],
+            deliveryAddress: shippingAddress.replace(/,/g, '<br/>'),
+            expectedDelivery: new Date(expectedDelivery).toLocaleDateString(),
+            shippingMethod: 'Domestic Shipping',
+        };
+
+        await orderConfirmationEmail(
+            userFound.FullName,
+            userFound.Email,
+            'Order Confirmation - Shree Venkateswara Agros and Herbs',
+            orderData
+        );
+
+        await orderConfirmationEmail(
+            userFound.FullName,
+            'svahpl1@gmail.com',
+            'Order Confirmation - Shree Venkateswara Agros and Herbs',
+            orderData
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Order Placed Successfully!",
+            orderId: order._id,
+        });
+
+    } catch (error) {
+        console.error("🔥 INR Order Creation Error:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message || "Internal Server Error",
+        });
+    }
+};
