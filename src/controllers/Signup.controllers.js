@@ -58,32 +58,31 @@ export const getAllUser = async (req, res) => {
 
 export const getUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.userId)
+        const user = await User.findById(req.params.userId);
         console.log(user);
         if (!user) {
-            return res.status(400).json({ msg: "User not found" });
+            return res.status(400).json({ msg: 'User not found' });
         }
-        return res.status(200).json({ message: "User found", user });
+        return res.status(200).json({ message: 'User found', user });
     } catch (error) {
-        console.error("Error in getUser:", error);
-        return res.status(500).json({ msg: "Internal server error", error });
+        console.error('Error in getUser:', error);
+        return res.status(500).json({ msg: 'Internal server error', error });
     }
-  };
+};
 
 export const getAdmin = async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId)
+        const user = await User.findById(req.user.userId);
         console.log(user);
         if (!user) {
-            return res.status(400).json({ msg: "User not found" });
+            return res.status(400).json({ msg: 'User not found' });
         }
-        return res.status(200).json({ message: "User found", user });
+        return res.status(200).json({ message: 'User found', user });
     } catch (error) {
-        console.error("Error in getUser:", error);
-        return res.status(500).json({ msg: "Internal server error", error });
+        console.error('Error in getUser:', error);
+        return res.status(500).json({ msg: 'Internal server error', error });
     }
-  };
-
+};
 
 export const deleteUser = async (req, res) => {
     try {
@@ -144,12 +143,13 @@ export const EmailByAdmin = async (req, res) => {
 };
 
 export const getUserByClerkId = async (req, res) => {
-    const { clerkId } = req.params;
+    const { emailId } = req.params;
     try {
-        if (!clerkId) return res.status(404).json({ error: 'Clerk ID is required' });
-        const user = await User.find({ clerkUserId: clerkId });
+        if (!emailId) return res.status(404).json({ error: 'Clerk ID is required' });
+        const user = await User.find({ Email: emailId });
         return res.status(200).json({ user });
     } catch (error) {
+        console.log(error);
         return res.status(500).json({ error });
     }
 };
