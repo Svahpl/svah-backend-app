@@ -64,7 +64,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // change
-app.use(cors(devCorsOptions));
+app.use(cors(corsOptions));
 //
 
 // ========================== IMPORTANT: Webhook Route =========================== //
