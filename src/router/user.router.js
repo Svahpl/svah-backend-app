@@ -12,6 +12,7 @@ import {
     updateUserAddress,
     addNewAddress,
     deleteAddress,
+    getClerkUser,
 } from '../controllers/Signup.controllers.js';
 import { signup, login } from '../controllers/Admin.controllers.js';
 import { AdminVerify } from '../middlewares/Admin.middlewares.js';
@@ -39,3 +40,7 @@ userRouter.route('/get-user-address/:userId').get(getUserAddress);
 userRouter.route('/update-address/:userId').post(updateUserAddress);
 userRouter.route('/add-new-address/:userId').post(addNewAddress);
 userRouter.route('/delete-user-address/:userId/:addressId').delete(deleteAddress);
+
+// Clerk Routers
+
+userRouter.route('/get-users').get(getClerkUser)

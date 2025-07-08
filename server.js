@@ -19,6 +19,7 @@ import { deliveryRouter } from './src/router/delevery.router.js';
 import { commentRouter } from './src/router/comment.router.js';
 import Razorpay from 'razorpay';
 import { razorPayRouter } from './src/router/razorpay.router.js';
+import { createClerkClient } from '@clerk/backend'
 
 dotenv.config();
 const app = express();
@@ -63,6 +64,8 @@ const devCorsOptions = {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+
 // change
 app.use(cors(corsOptions));
 //
@@ -99,6 +102,7 @@ app.use('/api/form', formRouter);
 app.use('/api/charge', deliveryRouter);
 app.use('/api/comment', commentRouter);
 app.use('/api/razorpay', razorPayRouter)
+app.use('/api/clerk',userRouter)
 
 app.get('/api/protected', ClerkExpressRequireAuth(), async (req, res) => {
     const userId = req.auth.userId;
