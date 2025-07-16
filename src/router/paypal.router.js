@@ -17,6 +17,7 @@ const getAccessToken = async (req, res) => {
         // cache and return the access token
         const data = JSON.parse(response.body);
         const newAccessToken = data.access_token;
+        console.log(`Access Token Fetch Successful!`);
         return newAccessToken;
     } catch (error) {
         console.log(error);
@@ -32,7 +33,9 @@ const createOrder = async (req, res) => {
     }
     try {
         const accessToken = await getAccessToken();
-
+        if (!accessToken) return res.status(500).json({ msg: 'Access Token is Required' });
+        console.log(`Access Token Recieved from Paypal.`);
+        console.log(`Processing Order Creation...`);
         const response = await got.post(`${process.env.PAYPAL_BASEURL}/v2/checkout/orders`, {
             headers: {
                 'Content-type': 'application/json',
@@ -96,6 +99,8 @@ const createOrder = async (req, res) => {
 
         const order = JSON.parse(response.body);
         const orderId = order.id;
+        if (!orderId) return res.status(500).json({ error: 'Order ID not recieved' });
+        console.log(`Order ID created and Sent`);
         return res.status(200).json({ orderId });
     } catch (error) {
         console.error('Status Code:', error.response?.statusCode);
